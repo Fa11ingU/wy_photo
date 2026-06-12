@@ -1,432 +1,762 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>JANG WONYOUNG — Infinite Canvas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JANG WONYOUNG — Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:ital,wght@0,200;0,300;0,400;1,200;1,300&display=swap" rel="stylesheet">
 <style>
-/* ===== Reset ===== */
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #0a0a0e;
-  --accent: #c9a87c;
-  --accent-dim: #8b7355;
-  --text: #e8e4e1;
-  --text-muted: #7d7872;
+  --bg: #f9f8f6;
+  --text: #1a1a1c;
+  --text-muted: #6b6b6f;
+  --text-faint: #a8a8ac;
+  --accent: #b8976e;
+  --spacing-xs: 8px;
+  --spacing-sm: 24px;
+  --spacing-md: 48px;
+  --spacing-lg: 80px;
+  --spacing-xl: 140px;
+  --spacing-2xl: 200px;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-html, body {
-  width: 100%; height: 100%; overflow: hidden;
-  font-family: 'Georgia', 'Noto Serif SC', 'SimSun', serif;
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', 'Helvetica Neue', 'PingFang SC', sans-serif;
+  font-weight: 300;
   background: var(--bg);
   color: var(--text);
-  -webkit-user-select: none; user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  line-height: 1.6;
+  overflow-x: hidden;
 }
 
-/* ===== Noise Texture ===== */
-.noise {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+/* Selection */
+::selection {
+  background: rgba(184, 151, 110, 0.2);
+  color: var(--text);
 }
 
-/* ===== Canvas ===== */
-#canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  cursor: grab;
-}
-#canvas:active { cursor: grabbing; }
-#canvas.dragging { cursor: grabbing; }
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.serif       { font-family: 'Cormorant Garamond', 'Georgia', 'Noto Serif SC', serif; }
+.sans        { font-family: 'Inter', 'Helvetica Neue', 'PingFang SC', sans-serif; }
+.fw-200      { font-weight: 200; }
+.fw-300      { font-weight: 300; }
+.fw-400      { font-weight: 400; }
+.italic      { font-style: italic; }
+.tracking-xs { letter-spacing: 0.02em; }
+.tracking-sm { letter-spacing: 0.06em; }
+.tracking-md { letter-spacing: 0.14em; }
+.tracking-lg { letter-spacing: 0.26em; }
+.text-muted  { color: var(--text-muted); }
+.text-faint  { color: var(--text-faint); }
+.text-accent { color: var(--accent); }
 
-#canvas-world {
-  position: absolute;
-  /* Changed by JS transform */
-  will-change: transform;
-  transform-origin: 0 0;
-}
-
-/* ===== Grid Dots Background ===== */
-#canvas-world::before {
-  content: '';
-  position: absolute;
-  /* Large enough to cover the scatter area */
-  width: 8000px; height: 6000px;
-  left: -1000px; top: -1000px;
-  background:
-    radial-gradient(circle at 0 0, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* ===== Photo Cards ===== */
-.photo-card {
-  position: absolute;
-  z-index: 1;
-  cursor: pointer;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              z-index 0s step-end,
-              box-shadow 0.35s ease,
-              filter 0.35s ease;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
-  /* Random sizes applied via JS or inline style */
-}
-.photo-card img {
-  display: block;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
-  pointer-events: none;
-}
-
-/* Polaroid-style border for some cards */
-.photo-card.polaroid {
-  background: #f8f5f0;
-  padding: 14px 14px 50px 14px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
-  border-radius: 2px;
-}
-.photo-card.polaroid img {
-  border-radius: 1px;
-}
-.photo-card.polaroid::after {
-  content: 'JANG WONYOUNG';
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: #999;
-  font-family: 'Georgia', serif;
-  white-space: nowrap;
-}
-
-/* Tape effect for some cards */
-.photo-card.taped::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%) rotate(2deg);
-  width: 60px;
-  height: 18px;
-  background: rgba(255,255,240,0.6);
-  z-index: 2;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
-}
-
-/* Hover state */
-.photo-card:hover {
-  z-index: 999 !important;
-  transform: scale(1.07) rotate(0deg) !important;
-  filter: drop-shadow(0 16px 40px rgba(0,0,0,0.7)) brightness(1.05);
-  transition: transform 0.3s ease-out, z-index 0s step-start, box-shadow 0.3s ease, filter 0.3s ease;
-}
-
-/* ===== Highlight Secret Photos ===== */
-.photo-card.secret {
-  opacity: 0.35;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)) blur(0.5px);
-  transition: opacity 0.5s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.5s ease, box-shadow 0.5s ease;
-}
-.photo-card.secret:hover {
-  opacity: 1;
-  filter: drop-shadow(0 16px 40px rgba(0,0,0,0.7)) brightness(1.05) blur(0px);
-}
-.photo-card.secret .secret-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 3;
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: var(--accent);
-  background: rgba(0,0,0,0.6);
-  padding: 3px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(201,168,124,0.3);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.photo-card.secret:hover .secret-badge {
-  opacity: 1;
-}
-
-/* ===== Zoom HUD ===== */
-.zoom-hud {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 100;
+/* ============================================================
+   HERO — Full viewport intro
+   ============================================================ */
+.hero {
+  position: relative;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+/* ============================================================
+   LEAF PILE — Scattered thumbnail collage
+   ============================================================ */
+.leaf-pile {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  height: 320px;
+  margin: 0 auto var(--spacing-lg);
   pointer-events: auto;
 }
-.zoom-btn {
-  width: 36px; height: 36px;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 50%;
-  background: rgba(10,10,14,0.7);
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all 0.3s ease;
-}
-.zoom-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(10,10,14,0.9);
-}
-.zoom-level {
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  color: var(--text-muted);
-  padding: 4px 0;
-  text-align: center;
-  min-width: 44px;
-}
 
-/* ===== Mini Compass / Minimap hint ===== */
-.compass-hint {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-.compass-hint span { opacity: 0.5; font-size: 0.8rem; }
-.compass-hint.visible { opacity: 0.7; }
-
-/* ===== Title Card ===== */
-.title-card {
+.leaf-pile .leaf {
   position: absolute;
-  z-index: 10;
-  text-align: center;
-  pointer-events: auto;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              z-index 0s step-end,
-              box-shadow 0.35s ease;
+  cursor: pointer;
+  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+              z-index 0s step-end;
+  will-change: transform;
 }
-.title-card-inner {
-  background: rgba(10,10,14,0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 40px 50px;
-  border: 1px solid rgba(201,168,124,0.2);
-  border-radius: 2px;
-  text-align: center;
-}
-.title-card-inner .tag {
-  font-size: 0.55rem;
-  letter-spacing: 0.4em;
-  color: var(--accent-dim);
-  text-transform: uppercase;
-  margin-bottom: 16px;
-}
-.title-card-inner h1 {
-  font-size: 3.5rem;
-  font-weight: 200;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
-  margin-bottom: 0;
-}
-.title-card-inner h1 .last-name {
+
+.leaf-pile .leaf img {
   display: block;
-  font-size: 0.45em;
-  letter-spacing: 0.3em;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.12),
+    0 8px 20px rgba(0,0,0,0.06);
+  transition: box-shadow 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Polaroid variant */
+.leaf-pile .leaf.polaroid-leaf {
+  background: #fff;
+  padding: 6px 6px 24px 6px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  border-radius: 2px;
+}
+.leaf-pile .leaf.polaroid-leaf img {
+  border-radius: 1px;
+  box-shadow: none;
+}
+
+/* Tape variant */
+.leaf-pile .leaf.taped-leaf::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(1deg);
+  width: 40px;
+  height: 12px;
+  background: rgba(220,215,200,0.7);
+  z-index: 2;
+  border-radius: 1px;
+}
+
+/* Hover: lift the leaf */
+.leaf-pile .leaf:hover {
+  z-index: 999 !important;
+  transform: translateY(-10px) rotate(0deg) !important;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              z-index 0s step-start;
+}
+.leaf-pile .leaf:hover img {
+  box-shadow:
+    0 12px 32px rgba(0,0,0,0.22),
+    0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Adjacent leaves get a subtle nudge */
+.leaf-pile .leaf:hover ~ .leaf {
+  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Leaf entrance animation — gentle float down */
+.leaf-pile .leaf {
+  opacity: 0;
+  transform: translateY(-40px) rotate(var(--leaf-rot, 0deg)) scale(0.85);
+  animation: leafFall 1.4s var(--ease-out-quint) forwards;
+}
+
+@keyframes leafFall {
+  0%   { opacity: 0; transform: translateY(-40px) rotate(var(--leaf-rot, 0deg)) scale(0.85); }
+  60%  { opacity: 1; transform: translateY(6px) rotate(calc(var(--leaf-rot, 0deg) * 0.6)) scale(1.02); }
+  80%  { opacity: 1; transform: translateY(-2px) rotate(calc(var(--leaf-rot, 0deg) * 1.05)) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) rotate(var(--leaf-rot, 0deg)) scale(1); }
+}
+
+/* Stagger leaf falls */
+.leaf-pile .leaf:nth-child(1)  { animation-delay: 0.02s; }
+.leaf-pile .leaf:nth-child(2)  { animation-delay: 0.06s; }
+.leaf-pile .leaf:nth-child(3)  { animation-delay: 0.10s; }
+.leaf-pile .leaf:nth-child(4)  { animation-delay: 0.14s; }
+.leaf-pile .leaf:nth-child(5)  { animation-delay: 0.18s; }
+.leaf-pile .leaf:nth-child(6)  { animation-delay: 0.22s; }
+.leaf-pile .leaf:nth-child(7)  { animation-delay: 0.26s; }
+.leaf-pile .leaf:nth-child(8)  { animation-delay: 0.30s; }
+.leaf-pile .leaf:nth-child(9)  { animation-delay: 0.34s; }
+.leaf-pile .leaf:nth-child(10) { animation-delay: 0.38s; }
+.leaf-pile .leaf:nth-child(11) { animation-delay: 0.42s; }
+.leaf-pile .leaf:nth-child(12) { animation-delay: 0.46s; }
+.leaf-pile .leaf:nth-child(13) { animation-delay: 0.50s; }
+.leaf-pile .leaf:nth-child(14) { animation-delay: 0.54s; }
+.leaf-pile .leaf:nth-child(15) { animation-delay: 0.58s; }
+.leaf-pile .leaf:nth-child(16) { animation-delay: 0.62s; }
+.leaf-pile .leaf:nth-child(17) { animation-delay: 0.66s; }
+.leaf-pile .leaf:nth-child(18) { animation-delay: 0.70s; }
+.leaf-pile .leaf:nth-child(19) { animation-delay: 0.74s; }
+.leaf-pile .leaf:nth-child(20) { animation-delay: 0.78s; }
+.leaf-pile .leaf:nth-child(21) { animation-delay: 0.82s; }
+.leaf-pile .leaf:nth-child(22) { animation-delay: 0.86s; }
+.leaf-pile .leaf:nth-child(23) { animation-delay: 0.90s; }
+.leaf-pile .leaf:nth-child(24) { animation-delay: 0.94s; }
+.leaf-pile .leaf:nth-child(25) { animation-delay: 0.98s; }
+.leaf-pile .leaf:nth-child(26) { animation-delay: 1.02s; }
+.leaf-pile .leaf:nth-child(27) { animation-delay: 1.06s; }
+.leaf-pile .leaf:nth-child(28) { animation-delay: 1.10s; }
+.leaf-pile .leaf:nth-child(29) { animation-delay: 1.14s; }
+.leaf-pile .leaf:nth-child(30) { animation-delay: 1.18s; }
+.leaf-pile .leaf:nth-child(31) { animation-delay: 1.22s; }
+.leaf-pile .leaf:nth-child(32) { animation-delay: 1.26s; }
+.leaf-pile .leaf:nth-child(33) { animation-delay: 1.30s; }
+.leaf-pile .leaf:nth-child(34) { animation-delay: 1.34s; }
+
+/* Leaf pile responsive */
+@media (max-width: 640px) {
+  .leaf-pile {
+    height: 220px;
+    max-width: 100%;
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+/* ============================================================
+   HERO TEXT
+   ============================================================ */
+.hero-inner {
+  max-width: 700px;
+}
+
+.hero-rule {
+  width: 1px;
+  height: 64px;
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  margin: 0 auto var(--spacing-md);
+  opacity: 0.5;
+}
+
+.hero-tag {
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.hero h1 {
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-size: clamp(2.8rem, 6vw, 5.5rem);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: 0.03em;
+  color: var(--text);
+  margin-bottom: var(--spacing-sm);
+}
+
+.hero h1 em {
+  display: block;
+  font-size: 0.42em;
+  font-weight: 300;
+  letter-spacing: 0.28em;
   color: var(--accent);
+  font-style: normal;
   margin-bottom: 6px;
 }
-.title-card-inner .line {
-  width: 1px; height: 40px;
-  background: linear-gradient(to bottom, transparent, var(--accent-dim), transparent);
-  margin: 20px auto;
-}
-.title-card-inner p {
-  font-size: 0.68rem;
+
+.hero p {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 300;
+  letter-spacing: 0.16em;
   color: var(--text-muted);
-  letter-spacing: 0.15em;
-  line-height: 2;
-  max-width: 300px;
-}
-.title-card:hover {
-  z-index: 999 !important;
-  transform: scale(1.03) rotate(0deg) !important;
+  line-height: 2.2;
 }
 
-/* ===== Lightbox ===== */
-.lightbox {
-  position: fixed; inset: 0; z-index: 10000;
-  background: rgba(3,3,7,0.97);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.5s ease;
-}
-.lightbox.active { opacity: 1; pointer-events: auto; }
-
-.lightbox-inner {
-  position: relative; max-width: 92vw; max-height: 92vh;
-  display: flex; align-items: center; justify-content: center;
-  transform: scale(0.88);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lightbox.active .lightbox-inner { transform: scale(1); }
-
-.lightbox img {
-  max-width: 90vw; max-height: 85vh; object-fit: contain;
-  border-radius: 4px;
-  box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+/* ============================================================
+   LAYOUT MODULES — shared
+   ============================================================ */
+.module {
+  position: relative;
+  padding: 0 var(--spacing-lg);
+  margin: 0 auto;
+  max-width: 1600px;
 }
 
-.lightbox-close {
-  position: absolute; top: 28px; right: 36px; z-index: 10001;
-  width: 46px; height: 46px;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 50%;
-  background: rgba(255,255,255,0.02);
-  color: var(--text); font-size: 1.4rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.4s ease; backdrop-filter: blur(12px);
-}
-.lightbox-close:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: var(--accent); color: var(--accent);
-  transform: rotate(90deg);
+/* ============================================================
+   MODULE A — Tension Close-Up
+   Photo 40% width on left, massive whitespace right
+   ============================================================ */
+.module-a {
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  gap: 0;
 }
 
-.lightbox-nav {
-  position: absolute; top: 50%; transform: translateY(-50%); z-index: 10001;
-  width: 48px; height: 48px;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 50%;
-  background: rgba(255,255,255,0.02);
-  color: var(--text); font-size: 1.1rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.4s ease; backdrop-filter: blur(12px);
-  opacity: 0;
-}
-.lightbox.active .lightbox-nav { opacity: 1; }
-.lightbox-nav:hover {
-  background: rgba(201,168,124,0.2);
-  border-color: var(--accent); color: var(--accent);
-}
-.lightbox-prev { left: 36px; }
-.lightbox-next { right: 36px; }
-
-.lightbox-counter {
-  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-  font-size: 0.7rem; letter-spacing: 0.25em; color: var(--text-muted);
-  z-index: 10001;
+.module-a .a-visual {
+  flex: 0 0 40%;
+  position: relative;
 }
 
-/* ===== Tooltip on edge ===== */
-.edge-indicator {
-  position: fixed;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0;
-  transition: opacity 0.5s ease;
+.module-a .a-visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.module-a .a-copy {
+  flex: 0 0 60%;
+  padding-left: clamp(60px, 10vw, 140px);
+}
+
+.module-a .a-label {
   font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  color: var(--accent-dim);
-  display: flex; align-items: center; gap: 6px;
-}
-.edge-indicator.active { opacity: 0.8; }
-.edge-indicator .arrow { font-size: 1rem; color: var(--accent); }
-
-.edge-top { top: 20px; left: 50%; transform: translateX(-50%); }
-.edge-bottom { bottom: 20px; left: 50%; transform: translateX(-50%); }
-.edge-left { left: 20px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
-.edge-right { right: 20px; top: 50%; transform: translateY(-50%) rotate(90deg); }
-
-/* ===== Footer watermark ===== */
-.footer-float {
-  position: fixed;
-  bottom: 24px;
-  left: 28px;
-  z-index: 100;
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
+  font-weight: 400;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
   color: var(--text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.module-a .a-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.25;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text);
+}
+
+.module-a .a-note {
+  font-size: 0.7rem;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.8;
+}
+
+/* Reverse: photo on right */
+.module-a.reverse {
+  flex-direction: row-reverse;
+}
+.module-a.reverse .a-copy {
+  padding-left: 0;
+  padding-right: clamp(60px, 10vw, 140px);
+}
+
+/* ============================================================
+   MODULE B — Breathing Landscape
+   Centered horizontal photo, huge vertical whitespace
+   ============================================================ */
+.module-b {
+  text-align: center;
+  padding-top: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
+}
+
+.module-b .b-frame {
+  display: inline-block;
+  max-width: 65%;
+  position: relative;
+}
+
+.module-b .b-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.module-b .b-caption {
+  margin-top: var(--spacing-sm);
+  font-size: 0.62rem;
+  font-weight: 300;
+  letter-spacing: 0.22em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   MODULE C — Diagonal Duo
+   Top-left medium + bottom-right small
+   ============================================================ */
+.module-c {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--spacing-lg);
+  align-items: start;
+  padding-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  min-height: 100vh;
+}
+
+.module-c .c-main {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
+.module-c .c-main img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.module-c .c-sub {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  max-width: 70%;
+}
+
+.module-c .c-sub img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.module-c .c-caption {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: end;
+  text-align: right;
+  max-width: 260px;
+  padding-bottom: var(--spacing-sm);
+}
+
+.module-c .c-label {
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.module-c .c-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+/* Reverse diagonal */
+.module-c.reverse .c-main {
+  grid-column: 2;
+}
+.module-c.reverse .c-sub {
+  grid-column: 1;
+  justify-self: start;
+}
+.module-c.reverse .c-caption {
+  grid-column: 1;
+  justify-self: start;
+  text-align: left;
+}
+
+/* ============================================================
+   MODULE D — Full Bleed
+   100% width, no border, chapter transition
+   ============================================================ */
+.module-d {
+  padding: 0;
+  margin: var(--spacing-2xl) 0;
+}
+
+.module-d img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.module-d .d-overlay {
+  position: absolute;
+  bottom: var(--spacing-lg);
+  left: var(--spacing-lg);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+
+.module-d .d-overlay .d-chapter {
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.module-d .d-overlay .d-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* ============================================================
+   MODULE E — Column with copy
+   Narrow centered photo with editorial text beside
+   ============================================================ */
+.module-e {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(40px, 8vw, 100px);
+  padding-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  min-height: 80vh;
+}
+
+.module-e .e-photo {
+  flex: 0 0 45%;
+}
+
+.module-e .e-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.module-e .e-text {
+  flex: 0 0 35%;
+}
+
+.module-e .e-index {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 4rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--accent);
+  line-height: 1;
   opacity: 0.5;
-  pointer-events: none;
+  margin-bottom: var(--spacing-xs);
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
-  .lightbox-nav { display: none; }
-  .lightbox-close { top: 16px; right: 16px; width: 40px; height: 40px; }
-  .zoom-hud { bottom: 20px; right: 16px; }
-  .title-card-inner { padding: 24px 30px; }
-  .title-card-inner h1 { font-size: 2.2rem; }
-  .footer-float { bottom: 16px; left: 12px; font-size: 0.5rem; }
+.module-e .e-label {
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.module-e .e-quote {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+/* ============================================================
+   GALLERY SECTION DIVIDER
+   ============================================================ */
+.divider {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl);
+}
+
+.divider-inner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.divider-rule {
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  opacity: 0.35;
+}
+
+.divider-label {
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.divider-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  color: var(--text-faint);
+  font-size: 0.6rem;
+  font-weight: 300;
+  letter-spacing: 0.22em;
+}
+
+.footer-rule {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--text-faint), transparent);
+  margin: 0 auto var(--spacing-md);
+  opacity: 0.25;
+}
+
+/* ============================================================
+   REVEAL ANIMATION (Intersection Observer driven)
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  will-change: transform, opacity;
+}
+
+.reveal.is-visible {
+  animation: revealUp 1.2s var(--ease-out-quint) forwards;
+}
+
+@keyframes revealUp {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Staggered delays for children inside a revealed container */
+.reveal-stagger > .reveal:nth-child(1) { animation-delay: 0s; }
+.reveal-stagger > .reveal:nth-child(2) { animation-delay: 0.15s; }
+.reveal-stagger > .reveal:nth-child(3) { animation-delay: 0.3s; }
+.reveal-stagger > .reveal:nth-child(4) { animation-delay: 0.45s; }
+
+/* For modules that should reveal as a whole */
+.module.reveal.is-visible > * {
+  animation: revealUp 1.2s var(--ease-out-quint) forwards;
+}
+.module.reveal.is-visible > *:nth-child(1) { animation-delay: 0s; }
+.module.reveal.is-visible > *:nth-child(2) { animation-delay: 0.12s; }
+.module.reveal.is-visible > *:nth-child(3) { animation-delay: 0.24s; }
+.module.reveal.is-visible > *:nth-child(4) { animation-delay: 0.36s; }
+
+.module.reveal > * {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* ============================================================
+   PHOTO HOVER
+   ============================================================ */
+img.photo {
+  display: block;
+  transition: filter 0.5s ease, opacity 1.2s var(--ease-out-quint);
+  cursor: default;
+}
+
+.photo-wrapper {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.photo-wrapper:hover img.photo {
+  filter: brightness(0.92);
+}
+
+.photo-wrapper:hover {
+  cursor: crosshair;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  :root {
+    --spacing-lg: 48px;
+    --spacing-xl: 80px;
+    --spacing-2xl: 120px;
+  }
+  .module { padding: 0 var(--spacing-md); }
+  .module-a { flex-direction: column; min-height: auto; gap: var(--spacing-md); }
+  .module-a .a-visual { flex: 0 0 auto; width: 70%; }
+  .module-a .a-copy { flex: 0 0 auto; padding-left: 0; padding-right: 0; width: 70%; }
+  .module-a.reverse { flex-direction: column; }
+  .module-b .b-frame { max-width: 85%; }
+  .module-c { grid-template-columns: 1fr; gap: var(--spacing-md); min-height: auto; }
+  .module-c .c-main { grid-column: 1; grid-row: 1; }
+  .module-c .c-caption { grid-column: 1; grid-row: 2; text-align: left; justify-self: start; }
+  .module-c .c-sub { grid-column: 1; grid-row: 3; max-width: 60%; justify-self: start; }
+  .module-c.reverse .c-main { grid-column: 1; grid-row: 1; }
+  .module-c.reverse .c-caption { grid-column: 1; grid-row: 2; text-align: left; justify-self: start; }
+  .module-c.reverse .c-sub { grid-column: 1; grid-row: 3; max-width: 60%; justify-self: start; }
+  .module-d .d-overlay { bottom: var(--spacing-md); left: var(--spacing-md); }
+  .module-e { flex-direction: column; gap: var(--spacing-md); min-height: auto; }
+  .module-e .e-photo { flex: 0 0 auto; width: 80%; }
+  .module-e .e-text { flex: 0 0 auto; width: 80%; }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --spacing-md: 32px;
+    --spacing-lg: 40px;
+    --spacing-xl: 64px;
+    --spacing-2xl: 80px;
+  }
+  .module { padding: 0 var(--spacing-sm); }
+  .module-a .a-visual, .module-a .a-copy { width: 90%; }
+  .module-b .b-frame { max-width: 95%; }
+  .module-c .c-sub { max-width: 80%; }
+  .module-e .e-photo, .module-e .e-text { width: 90%; }
+  .hero h1 { font-size: clamp(2rem, 8vw, 3rem); }
 }
 </style>
 </head>
 <body>
 
-<div class="noise"></div>
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero" id="hero">
+  <!-- Leaf Pile — scattered thumbnail collage -->
+  <div class="leaf-pile" id="leafPile" aria-label="Photo thumbnails collage"></div>
 
-<!-- Edge indicators -->
-<div class="edge-indicator edge-top" id="edgeTop"><span class="arrow">&#8593;</span> SCROLL TO EXPLORE</div>
-<div class="edge-indicator edge-bottom" id="edgeBottom"><span class="arrow">&#8595;</span> MORE PHOTOS</div>
-<div class="edge-indicator edge-left" id="edgeLeft"><span class="arrow">&#8592;</span> MORE</div>
-<div class="edge-indicator edge-right" id="edgeRight"><span class="arrow">&#8594;</span> MORE</div>
-
-<!-- Canvas -->
-<div id="canvas">
-  <div id="canvas-world">
-    <!-- Photos & title injected by JS -->
+  <div class="hero-inner reveal-stagger">
+    <div class="hero-rule reveal"></div>
+    <div class="hero-tag reveal">Editorial Portfolio</div>
+    <h1 class="reveal"><em>Jang</em>Wonyoung</h1>
+    <p class="reveal">
+      A study in light, form, and grace.<br>
+      Thirty-four frames — each a singular moment.
+    </p>
   </div>
-</div>
+</section>
 
-<!-- Zoom HUD -->
-<div class="zoom-hud">
-  <button class="zoom-btn" id="zoomIn" aria-label="Zoom in" title="Zoom In">+</button>
-  <div class="zoom-level" id="zoomLevel">100%</div>
-  <button class="zoom-btn" id="zoomOut" aria-label="Zoom out" title="Zoom Out">&minus;</button>
-  <button class="zoom-btn" id="zoomFit" aria-label="Fit view" title="Fit All" style="font-size:0.75rem;">&#9744;</button>
-</div>
+<!-- All photo modules are generated by JS below -->
 
-<!-- Compass Hint -->
-<div class="compass-hint" id="compassHint">
-  <span>&#8598;</span> DRAG TO EXPLORE <span>&#8600;</span>
-</div>
-
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lbClose" aria-label="Close">&times;</button>
-  <button class="lightbox-nav lightbox-prev" id="lbPrev" aria-label="Previous">&#10094;</button>
-  <button class="lightbox-nav lightbox-next" id="lbNext" aria-label="Next">&#10095;</button>
-  <div class="lightbox-inner"><img src="" alt="" id="lbImg"></div>
-  <div class="lightbox-counter" id="lbCounter"></div>
-</div>
-
-<div class="footer-float">JANG WONYOUNG · PERSONAL PHOTO WALL © 2026</div>
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer reveal">
+  <div class="footer-rule"></div>
+  JANG WONYOUNG &copy; 2026<br>
+  Editorial Photography Portfolio
+</footer>
 
 <script>
-// ========== PHOTO DATA ==========
+// ============================================================
+// PHOTO DATA
+// ============================================================
 const PHOTO_DIR = 'wy_pic/';
 const photoFiles = [
   'IMG_3971.jpeg','IMG_4083.jpeg','IMG_4085.jpeg','IMG_4086.jpeg',
@@ -440,504 +770,455 @@ const photoFiles = [
   'IMG_4116.jpeg','IMG_4117.jpeg'
 ];
 
-// ========== SEEDED RANDOM (for deterministic layout) ==========
-let seed = 42;
+// ============================================================
+// SHUFFLE (seeded for reproducibility)
+// ============================================================
+let seed = 137;
 function seededRandom() {
-  seed = (seed * 16807 + 0) % 2147483647;
+  seed = (seed * 16807) % 2147483647;
   return (seed - 1) / 2147483646;
 }
+const shuffled = photoFiles.map((f, i) => ({ file: f, idx: i, r: seededRandom() }));
+shuffled.sort((a, b) => a.r - b.r);
 
-// ========== CANVAS WORLD ==========
-const canvas = document.getElementById('canvas');
-const world = document.getElementById('canvas-world');
-const compassHint = document.getElementById('compassHint');
+// ============================================================
+// BUILD LEAF PILE — Scattered thumbnail collage
+// ============================================================
+(function buildLeafPile() {
+  const pile = document.getElementById('leafPile');
+  const leafCount = photoFiles.length; // 34
+  const pileW = pile.clientWidth;
+  const pileH = pile.clientHeight;
 
-// Canvas state
-let viewX = 0;
-let viewY = 0;
-let zoom = 1;
-const ZOOM_MIN = 0.12;
-const ZOOM_MAX = 3.5;
-const ZOOM_STEP = 0.1;
+  // Use a separate seed so leaf pile is deterministic but distinct from layout shuffle
+  let ls = 271;
+  function lr() { ls = (ls * 16807) % 2147483647; return (ls - 1) / 2147483646; }
 
-// World bounds (scatter area)
-const WORLD_W = 6000;
-const WORLD_H = 4500;
-const CANVAS_CENTER_X = WORLD_W / 2;
-const CANVAS_CENTER_Y = WORLD_H / 2;
+  // Define an organic cluster center and radius
+  const cx = pileW * 0.5;
+  const cy = pileH * 0.48;
+  const rx = pileW * 0.44;
+  const ry = pileH * 0.38;
 
-// Photo configs
-const PHOTO_SIZES = [
-  { w: 280, h: 380 },
-  { w: 320, h: 240 },
-  { w: 240, h: 320 },
-  { w: 300, h: 400 },
-  { w: 350, h: 280 },
-  { w: 260, h: 350 },
-  { w: 340, h: 260 },
-  { w: 280, h: 280 },
-];
+  // Leaf sizes — small thumbnails like scattered prints
+  const leafSizes = [
+    { w: 95, h: 130 }, { w: 80, h: 110 }, { w: 105, h: 80 },
+    { w: 90, h: 125 }, { w: 110, h: 85 }, { w: 85, h: 115 },
+    { w: 100, h: 100 }, { w: 75, h: 105 }, { w: 95, h: 75 },
+    { w: 88, h: 120 }, { w: 108, h: 90 }, { w: 82, h: 108 },
+  ];
 
-// ========== BUILD WORLD ==========
-const allPhotoCards = []; // { el, index, cx, cy, isSecret }
-
-// Choose 5 random indices as secrets
-const secretIndices = new Set();
-while (secretIndices.size < 5) {
-  secretIndices.add(Math.floor(seededRandom() * photoFiles.length));
-}
-
-// Generate layout positions using a Poisson-like distribution with jitter
-function generateLayout() {
+  // Generate positions using a spiral scatter with jitter
   const positions = [];
-  const margin = 300;
-  const minDist = 250;
+  for (let i = 0; i < leafCount; i++) {
+    // Golden-angle spiral to distribute evenly within the ellipse
+    const angle = i * 2.399963; // golden angle in radians
+    const r = Math.sqrt((i + 0.5) / leafCount); // sqrt for uniform disc distribution
+    const x = cx + Math.cos(angle) * r * rx;
+    const y = cy + Math.sin(angle) * r * ry;
 
-  // Use a grid with heavy jitter for organic placement
-  const cols = 7;
-  const rows = Math.ceil(photoFiles.length / cols);
-  const cellW = (WORLD_W - margin * 2) / cols;
-  const cellH = (WORLD_H - margin * 2) / rows;
+    // Add organic jitter
+    const jx = (lr() - 0.5) * 50;
+    const jy = (lr() - 0.5) * 40;
+    // Some leaves pushed further out to the edges
+    const edgePush = i < 8 ? (1 - r) * (lr() * 80 + 40) : 0;
 
-  photoFiles.forEach((_, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const baseX = margin + col * cellW + cellW / 2;
-    const baseY = margin + row * cellH + cellH / 2;
-
-    // Add significant random jitter
-    const jitterX = (seededRandom() - 0.5) * cellW * 0.7;
-    const jitterY = (seededRandom() - 0.5) * cellH * 0.7;
-
-    // Push edge secrets further out
-    const isSecret = secretIndices.has(i);
-    let extraX = 0, extraY = 0;
-    if (isSecret) {
-      const dir = seededRandom();
-      if (dir < 0.25) { extraX = -seededRandom() * 400 - 100; }
-      else if (dir < 0.5) { extraX = seededRandom() * 400 + 100; }
-      else if (dir < 0.75) { extraY = -seededRandom() * 400 - 100; }
-      else { extraY = seededRandom() * 400 + 100; }
-    }
+    const size = leafSizes[Math.floor(lr() * leafSizes.length)];
 
     positions.push({
-      x: baseX + jitterX + extraX,
-      y: baseY + jitterY + extraY,
-      isSecret,
-      index: i,
+      x: x + jx + (lr() - 0.5) * edgePush * 0.3,
+      y: y + jy + (lr() - 0.5) * edgePush * 0.3,
+      w: size.w,
+      h: size.h,
+      rotation: (lr() - 0.5) * 50, // -25deg to +25deg — varied scatter
+      z: Math.floor(lr() * 30), // z-index stacking
+      isPolaroid: lr() < 0.22,
+      isTaped: lr() < 0.32,
+      file: photoFiles[i],
     });
+  }
+
+  // Sort by z-index for proper stacking (back to front)
+  positions.sort((a, b) => a.z - b.z);
+
+  // Create DOM elements
+  positions.forEach((pos, i) => {
+    const leaf = document.createElement('div');
+    leaf.className = 'leaf';
+    if (pos.isPolaroid) leaf.classList.add('polaroid-leaf');
+    if (pos.isTaped) leaf.classList.add('taped-leaf');
+
+    // Position — center the leaf on its x,y
+    const left = pos.x - pos.w / 2;
+    const top = pos.y - pos.h / 2;
+
+    leaf.style.cssText = `
+      left: ${left.toFixed(0)}px;
+      top: ${top.toFixed(0)}px;
+      width: ${pos.w}px;
+      height: ${pos.isPolaroid ? pos.h + 18 : pos.h}px;
+      --leaf-rot: ${pos.rotation.toFixed(1)}deg;
+      transform: rotate(${pos.rotation.toFixed(1)}deg);
+      z-index: ${pos.z};
+    `;
+
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.alt = 'Thumbnail ' + (i + 1);
+    // Use data-src for lazy loading — swap on intersection
+    img.dataset.src = PHOTO_DIR + pos.file;
+    if (pos.isPolaroid) {
+      img.style.height = pos.h + 'px';
+    }
+
+    leaf.appendChild(img);
+
+    // Click to scroll to the corresponding module
+    leaf.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Find and scroll to the first module containing this photo
+      const modules = document.querySelectorAll('.module, .module-d');
+      const targetFile = pos.file;
+      for (const mod of modules) {
+        const imgs = mod.querySelectorAll('img[data-src], img[src]');
+        for (const mi of imgs) {
+          const src = mi.src || mi.dataset.src || '';
+          if (src.includes(targetFile)) {
+            mod.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Flash highlight
+            mod.style.transition = 'box-shadow 0.3s ease';
+            mod.style.boxShadow = '0 0 0 4px rgba(184,151,110,0.3)';
+            setTimeout(() => {
+              mod.style.boxShadow = '';
+              setTimeout(() => { mod.style.transition = ''; }, 300);
+            }, 800);
+            return;
+          }
+        }
+      }
+    });
+
+    pile.appendChild(leaf);
   });
-  return positions;
+
+  // Lazy-load leaf images via IntersectionObserver
+  // (short delay — the leaf pile is above the fold, so they load quickly)
+  const leafObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const imgs = entry.target.querySelectorAll('img[data-src]');
+        imgs.forEach(img => {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        });
+        leafObserver.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '200px' });
+
+  leafObserver.observe(pile);
+})();
+
+// ============================================================
+// MODULE TEMPLATES
+// ============================================================
+const editorialLabels = [
+  'Portrait', 'Study in Light', 'Moment Captured', 'Editorial',
+  'Close-Up', 'In Frame', 'Still Life', 'Vérité',
+  'The Gaze', 'Silhouette', 'Radiance', 'Poise',
+  'Presence', 'Quiet Drama', 'Aperture', 'Grace Note',
+  'Composition', 'The Look', 'Lumière', 'Character Study'
+];
+
+const editorialQuotes = [
+  'Light makes photography. Embrace light. Admire it. Love it.',
+  'A portrait is not made in the camera but on either side of it.',
+  'The best thing about a picture is that it never changes.',
+  'In photography there is a reality so subtle it becomes more real than reality.',
+  'What I like about photographs is that they capture a moment.',
+  'The camera is an instrument that teaches people how to see.',
+  'Photography is the story I fail to put into words.',
+  'A good photograph is one that communicates a fact.',
+  'Taking pictures is savoring life intensely, every hundredth of a second.',
+  'The whole point of taking pictures is so that you don\'t have to explain things with words.',
+  'When you photograph people in color, you photograph their clothes.',
+  'To me, photography is the simultaneous recognition of the significance of an event.',
+  'A photograph is a secret about a secret.',
+  'The eye should learn to listen before it looks.',
+  'Beauty can be seen in all things.',
+  'There is one thing the photograph must contain — the humanity of the moment.',
+  'Photography is a way of feeling, of touching, of loving.',
+  'It is an illusion that photos are made with the camera.'
+];
+
+function pick(arr, i) { return arr[i % arr.length]; }
+
+// ============================================================
+// BUILD MODULE HTML
+// ============================================================
+function buildModuleA(file, idx, reverse) {
+  const label = pick(editorialLabels, idx);
+  const cls = reverse ? 'module module-a reverse reveal' : 'module module-a reveal';
+  return `
+    <section class="${cls}">
+      <div class="a-visual">
+        <div class="photo-wrapper">
+          <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
+        </div>
+      </div>
+      <div class="a-copy">
+        <div class="a-label">${label} &mdash; No. ${String(idx+1).padStart(2,'0')}</div>
+        <div class="a-title">The space between<br>light and shadow</div>
+        <div class="a-note">A study in editorial composition. Each frame is a deliberate conversation between subject and void.</div>
+      </div>
+    </section>`;
 }
 
-const layout = generateLayout();
-
-// Build DOM
-layout.forEach((pos) => {
-  const { x, y, isSecret, index } = pos;
-
-  const card = document.createElement('div');
-  card.className = 'photo-card' + (isSecret ? ' secret' : '');
-
-  // Randomly apply polaroid or taped style
-  const styleRoll = seededRandom();
-  if (styleRoll < 0.2) card.classList.add('polaroid');
-  else if (styleRoll < 0.35) card.classList.add('taped');
-
-  // Random size
-  const size = PHOTO_SIZES[Math.floor(seededRandom() * PHOTO_SIZES.length)];
-  const isPolaroid = card.classList.contains('polaroid');
-  const w = size.w * (0.8 + seededRandom() * 0.5);
-  const h = size.h * (0.8 + seededRandom() * 0.5);
-
-  // Random rotation (-6deg to 6deg, sometimes a bit more)
-  let rotation = (seededRandom() - 0.5) * 12;
-  if (seededRandom() < 0.3) rotation = (seededRandom() - 0.5) * 3; // subtle
-  if (seededRandom() < 0.12) rotation = (seededRandom() - 0.5) * 18; // more extreme
-
-  // Store metadata
-  card.dataset.index = index;
-  card.dataset.cx = x;
-  card.dataset.cy = y;
-  card.dataset.rotation = rotation;
-  card.dataset.isSecret = isSecret ? '1' : '0';
-
-  // Position around center of image
-  card.style.left = (x - w / 2) + 'px';
-  card.style.top = (y - h / 2) + 'px';
-  card.style.width = w + 'px';
-  card.style.height = isPolaroid ? (h + 40) + 'px' : h + 'px';
-  card.style.transform = `rotate(${rotation.toFixed(1)}deg)`;
-
-  // Image
-  const img = document.createElement('img');
-  img.src = PHOTO_DIR + photoFiles[index];
-  img.alt = 'Jang Wonyoung Photo ' + (index + 1);
-  img.loading = 'lazy';
-  if (isPolaroid) img.style.height = h + 'px';
-  card.appendChild(img);
-
-  // Secret badge
-  if (isSecret) {
-    const badge = document.createElement('span');
-    badge.className = 'secret-badge';
-    badge.textContent = '✦ HIGHLIGHT';
-    card.appendChild(badge);
-  }
-
-  // Click handler
-  card.addEventListener('click', (e) => {
-    // Don't trigger lightbox if we were dragging
-    if (wasDragging) return;
-    openLightbox(index);
-  });
-
-  world.appendChild(card);
-  allPhotoCards.push({ el: card, index, cx: x, cy: y, isSecret });
-});
-
-// ========== TITLE CARD ==========
-const titleCard = document.createElement('div');
-titleCard.className = 'title-card';
-titleCard.style.left = (CANVAS_CENTER_X - 220) + 'px';
-titleCard.style.top = (CANVAS_CENTER_Y - 180) + 'px';
-titleCard.style.transform = 'rotate(-1.5deg)';
-titleCard.innerHTML = `
-  <div class="title-card-inner">
-    <div class="tag">Photo Gallery</div>
-    <h1><span class="last-name">JANG</span>WONYOUNG</h1>
-    <div class="line"></div>
-    <p>拖拽探索 · 滚轮缩放<br>Drag to explore · Scroll to zoom</p>
-  </div>`;
-world.appendChild(titleCard);
-
-// ========== CANVAS TRANSFORM ==========
-function applyTransform(animate = false) {
-  if (animate) {
-    world.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
-    setTimeout(() => { world.style.transition = ''; }, 500);
-  }
-  world.style.transform = `translate(${viewX}px, ${viewY}px) scale(${zoom})`;
+function buildModuleB(file, idx) {
+  return `
+    <section class="module module-b reveal">
+      <div class="b-frame">
+        <div class="photo-wrapper">
+          <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
+        </div>
+        <div class="b-caption">${pick(editorialLabels, idx)} &mdash; No. ${String(idx+1).padStart(2,'0')} &mdash; Horizontal Study</div>
+      </div>
+    </section>`;
 }
 
-// ========== INITIAL VIEW (fit to screen) ==========
-function fitToScreen() {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const fitZoom = Math.min(vw / WORLD_W, vh / WORLD_H, 0.65);
-  zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
-  viewX = (vw - WORLD_W * zoom) / 2;
-  viewY = (vh - WORLD_H * zoom) / 2;
-  applyTransform();
-  updateZoomHUD();
+function buildModuleC(fileMain, fileSub, idx, reverse) {
+  const label = pick(editorialLabels, idx);
+  const cls = reverse ? 'module module-c reverse reveal' : 'module module-c reveal';
+  return `
+    <section class="${cls}">
+      <div class="c-caption">
+        <div class="c-label">${label} &mdash; Diptych No. ${String(idx+1).padStart(2,'0')}</div>
+        <div class="c-title">A visual<br>conversation</div>
+      </div>
+      <div class="c-main">
+        <div class="photo-wrapper">
+          <img class="photo" data-src="${PHOTO_DIR}${fileMain}" alt="Wonyoung ${idx+1}a" loading="lazy">
+        </div>
+      </div>
+      <div class="c-sub">
+        <div class="photo-wrapper">
+          <img class="photo" data-src="${PHOTO_DIR}${fileSub}" alt="Wonyoung ${idx+1}b" loading="lazy">
+        </div>
+      </div>
+    </section>`;
 }
 
-fitToScreen();
-
-// ========== PAN LOGIC ==========
-let isDragging = false;
-let wasDragging = false;
-let dragStartX = 0, dragStartY = 0;
-let viewStartX = 0, viewStartY = 0;
-let dragMoved = 0;
-const DRAG_THRESHOLD = 5;
-
-canvas.addEventListener('pointerdown', (e) => {
-  if (e.target.closest('.photo-card') || e.target.closest('.title-card')) {
-    // On photo/title: allow click, but also allow drag
-    isDragging = true;
-    wasDragging = false;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    viewStartX = viewX;
-    viewStartY = viewY;
-    dragMoved = 0;
-    canvas.setPointerCapture(e.pointerId);
-    return;
-  }
-  isDragging = true;
-  wasDragging = false;
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
-  viewStartX = viewX;
-  viewStartY = viewY;
-  dragMoved = 0;
-  canvas.setPointerCapture(e.pointerId);
-  canvas.classList.add('dragging');
-});
-
-canvas.addEventListener('pointermove', (e) => {
-  if (!isDragging) return;
-  const dx = e.clientX - dragStartX;
-  const dy = e.clientY - dragStartY;
-  dragMoved = Math.abs(dx) + Math.abs(dy);
-  if (dragMoved > DRAG_THRESHOLD) {
-    wasDragging = true;
-  }
-  viewX = viewStartX + dx;
-  viewY = viewStartY + dy;
-  applyTransform();
-
-  // Show/hide compass
-  if (dragMoved > 20) {
-    compassHint.classList.remove('visible');
-  }
-
-  // Edge indicators
-  updateEdgeIndicators();
-});
-
-canvas.addEventListener('pointerup', (e) => {
-  isDragging = false;
-  canvas.classList.remove('dragging');
-  canvas.releasePointerCapture(e.pointerId);
-
-  // Reset click flag after a frame
-  requestAnimationFrame(() => {
-    setTimeout(() => { wasDragging = false; }, 50);
-  });
-});
-
-canvas.addEventListener('pointerleave', () => {
-  isDragging = false;
-  canvas.classList.remove('dragging');
-});
-
-// ========== ZOOM LOGIC (Scroll Wheel) ==========
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-
-  // Point in world space before zoom
-  const worldX = (mouseX - viewX) / zoom;
-  const worldY = (mouseY - viewY) / zoom;
-
-  // Zoom
-  const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-  const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + delta * (zoom * 0.5 + 0.5)));
-  const zoomFactor = newZoom / zoom;
-  zoom = newZoom;
-
-  // Adjust view to keep mouse point stable
-  viewX = mouseX - worldX * zoom;
-  viewY = mouseY - worldY * zoom;
-
-  applyTransform();
-  updateZoomHUD();
-  updateEdgeIndicators();
-  compassHint.classList.remove('visible');
-}, { passive: false });
-
-// ========== PINCH ZOOM (Mobile) ==========
-let pinchStartDist = 0;
-let pinchStartZoom = 1;
-let pinchCenterX = 0;
-let pinchCenterY = 0;
-let pinchStartViewX = 0;
-let pinchStartViewY = 0;
-
-canvas.addEventListener('touchstart', (e) => {
-  if (e.touches.length === 2) {
-    e.preventDefault();
-    pinchStartDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    pinchStartZoom = zoom;
-    pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-    pinchStartViewX = viewX;
-    pinchStartViewY = viewY;
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchmove', (e) => {
-  if (e.touches.length === 2) {
-    e.preventDefault();
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchStartZoom * (dist / pinchStartDist)));
-    const zoomFactor = newZoom / pinchStartZoom;
-
-    const rect = canvas.getBoundingClientRect();
-    const cx = pinchCenterX - rect.left;
-    const cy = pinchCenterY - rect.top;
-
-    const worldX = (cx - pinchStartViewX) / pinchStartZoom;
-    const worldY = (cy - pinchStartViewY) / pinchStartZoom;
-
-    zoom = newZoom;
-    viewX = cx - worldX * zoom;
-    viewY = cy - worldY * zoom;
-
-    applyTransform();
-    updateZoomHUD();
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchend', () => {
-  pinchStartDist = 0;
-});
-
-// ========== ZOOM BUTTONS ==========
-document.getElementById('zoomIn').addEventListener('click', () => {
-  zoomTo(zoom * 1.3);
-});
-document.getElementById('zoomOut').addEventListener('click', () => {
-  zoomTo(zoom / 1.3);
-});
-document.getElementById('zoomFit').addEventListener('click', () => {
-  fitToScreen();
-  compassHint.classList.add('visible');
-  setTimeout(() => compassHint.classList.remove('visible'), 3000);
-});
-
-function zoomTo(targetZoom) {
-  const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom));
-  const rect = canvas.getBoundingClientRect();
-  const cx = rect.width / 2;
-  const cy = rect.height / 2;
-  const worldX = (cx - viewX) / zoom;
-  const worldY = (cy - viewY) / zoom;
-  zoom = clamped;
-  viewX = cx - worldX * zoom;
-  viewY = cy - worldY * zoom;
-  applyTransform(true);
-  updateZoomHUD();
-  updateEdgeIndicators();
+function buildModuleD(file, idx) {
+  return `
+    <section class="module-d reveal" style="position:relative;">
+      <div class="photo-wrapper" style="position:relative;">
+        <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
+        <div class="d-overlay">
+          <div class="d-chapter">Chapter ${Math.ceil((idx+1)/8)}</div>
+          <div class="d-title">${pick(editorialLabels, idx)}</div>
+        </div>
+      </div>
+    </section>`;
 }
 
-function updateZoomHUD() {
-  document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+function buildModuleE(file, idx, reverse) {
+  const quote = pick(editorialQuotes, idx);
+  const cls = reverse ? 'module module-e reveal' : 'module module-e reveal';
+  return `
+    <section class="${cls}">
+      <div class="e-photo">
+        <div class="photo-wrapper">
+          <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
+        </div>
+      </div>
+      <div class="e-text">
+        <div class="e-index">${String(idx+1).padStart(2,'0')}</div>
+        <div class="e-label">${pick(editorialLabels, idx)}</div>
+        <div class="e-quote">&ldquo;${quote}&rdquo;</div>
+      </div>
+    </section>`;
 }
 
-// ========== EDGE INDICATORS ==========
-const edgeEls = {
-  top: document.getElementById('edgeTop'),
-  bottom: document.getElementById('edgeBottom'),
-  left: document.getElementById('edgeLeft'),
-  right: document.getElementById('edgeRight'),
+// ============================================================
+// DEFINE THE LAYOUT SEQUENCE
+// ============================================================
+// We have 34 photos. Module A/B/D/E each use 1 photo, Module C uses 2.
+// The layout MUST consume exactly 34 photos.
+//
+// Sequence: B-A-C-D-E-A-C-B-D-E-A-C-[divider]-B-C-D-E-A-C-B-D-E-A-C-B
+// Photo count: 1+1+2+1+1+1+2+1+1+1+1+2 + 1+2+1+1+1+2+1+1+1+1+2+1 = 34 ✓
+
+const layoutPlan = [];
+let pi = 0;
+
+// Helper: consume one photo from shuffled array, returns {file, idx}
+function next() {
+  const item = shuffled[pi++];
+  return { file: item.file, idx: item.idx };
+}
+
+// Helper: push a module with idx stored at definition time (not build time)
+function P(type, opts = {}) {
+  const entry = { type, ...opts };
+  layoutPlan.push(entry);
+}
+
+// 1. B — gentle opening (1)
+P('B', next());
+// 2. A — tension close-up (1)
+P('A', { ...next(), reverse: false });
+// 3. C — diagonal duo (2)
+P('C', { fileMain: next().file, fileSub: next().file, idx: next().idx, reverse: false });
+// → adjust: C needs its own idx. Use the first photo's idx.
+// Actually let me restructure — store idx explicitly on each entry
+
+// Clear and redo cleanly
+layoutPlan.length = 0;
+pi = 0;
+
+function plan(type, config = {}) {
+  layoutPlan.push({ type, ...config });
+}
+
+// Consume photos: track how many used so far
+// A=1, B=1, C=2, D=1, E=1, divider=0
+// Pattern for 34: B(1) A(2) C(4) D(5) E(6) A(7) C(9) B(10) D(11) E(12) A(13) C(15)
+//                [divider]
+//                B(16) C(18) D(19) E(20) A(21) C(23) B(24) D(25) E(26) A(27) C(29) B(30) B(31) A(32) E(33) D(34)
+
+plan('B', next());                          //  1
+plan('A', { ...next(), reverse: false });   //  2
+plan('C', { f1: next(), f2: next(), reverse: false }); //  4
+plan('D', next());                          //  5
+plan('E', { ...next(), reverse: false });   //  6
+plan('A', { ...next(), reverse: true });    //  7
+plan('C', { f1: next(), f2: next(), reverse: true });  //  9
+plan('B', next());                          // 10
+plan('D', next());                          // 11
+plan('E', { ...next(), reverse: false });   // 12
+plan('A', { ...next(), reverse: false });   // 13
+plan('C', { f1: next(), f2: next(), reverse: false }); // 15
+
+plan('divider');
+
+plan('B', next());                          // 16
+plan('C', { f1: next(), f2: next(), reverse: true });  // 18
+plan('D', next());                          // 19
+plan('E', { ...next(), reverse: false });   // 20
+plan('A', { ...next(), reverse: true });    // 21
+plan('C', { f1: next(), f2: next(), reverse: false }); // 23
+plan('B', next());                          // 24
+plan('D', next());                          // 25
+plan('E', { ...next(), reverse: false });   // 26
+plan('A', { ...next(), reverse: false });   // 27
+plan('C', { f1: next(), f2: next(), reverse: true });  // 29
+plan('B', next());                          // 30
+plan('B', next());                          // 31
+plan('A', { ...next(), reverse: true });    // 32
+plan('E', { ...next(), reverse: false });   // 33
+plan('D', next());                          // 34
+
+// ============================================================
+// BUILD THE DOM
+// ============================================================
+const hero = document.getElementById('hero');
+
+function buildHTML(p) {
+  switch (p.type) {
+    case 'A': return buildModuleA(p.file, p.idx, p.reverse);
+    case 'B': return buildModuleB(p.file, p.idx);
+    case 'C': return buildModuleC(p.f1.file, p.f2.file, p.f1.idx, p.reverse);
+    case 'D': return buildModuleD(p.file, p.idx);
+    case 'E': return buildModuleE(p.file, p.idx, p.reverse);
+    case 'divider': return `
+      <div class="divider reveal">
+        <div class="divider-inner">
+          <div class="divider-rule"></div>
+          <div class="divider-label">Portfolio</div>
+          <div class="divider-title">The Collection Continues</div>
+        </div>
+      </div>`;
+    default: return '';
+  }
+}
+
+let htmlStr = '';
+layoutPlan.forEach(p => {
+  const html = buildHTML(p);
+  if (p.type !== 'divider') {
+    // Track index for staggered animation identity — we assign after build
+  }
+  htmlStr += html;
+});
+
+hero.insertAdjacentHTML('afterend', htmlStr);
+
+// Debug: count how many photos were used
+const totalUsed = layoutPlan.reduce((sum, p) => {
+  if (p.type === 'C') return sum + 2;
+  if (p.type === 'divider') return sum;
+  return sum + 1;
+}, 0);
+console.log('Photos used in layout:', totalUsed, '/', photoFiles.length);
+
+// ============================================================
+// INTERSECTION OBSERVER — Lazy Activation
+// ============================================================
+const observerOptions = {
+  root: null,
+  rootMargin: '120px 0px 120px 0px',
+  threshold: 0.08
 };
 
-function updateEdgeIndicators() {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const worldLeft = -viewX / zoom;
-  const worldTop = -viewY / zoom;
-  const worldRight = worldLeft + vw / zoom;
-  const worldBottom = worldTop + vh / zoom;
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
 
-  const threshold = 100;
-  edgeEls.top.classList.toggle('active', worldTop < threshold);
-  edgeEls.bottom.classList.toggle('active', worldBottom > WORLD_H - threshold);
-  edgeEls.left.classList.toggle('active', worldLeft < threshold);
-  edgeEls.right.classList.toggle('active', worldRight > WORLD_W - threshold);
-}
+      // Add .is-visible to trigger the CSS animation
+      el.classList.add('is-visible');
 
-// ========== KEYBOARD ==========
-document.addEventListener('keydown', (e) => {
-  if (lightboxOpen) {
-    if (e.key === 'Escape') closeLightbox();
-    if (e.key === 'ArrowLeft') showPrev();
-    if (e.key === 'ArrowRight') showNext();
-    return;
+      // Swap data-src → src for lazy images inside this module
+      const imgs = el.querySelectorAll('img[data-src]');
+      imgs.forEach(img => {
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+        // Once the real src is set, the image loads and the reveal animation
+        // shows it fading in smoothly
+      });
+
+      // Stop observing once revealed
+      observer.unobserve(el);
+    }
+    // Note: we do NOT remove .is-visible when leaving viewport —
+    // this avoids layout thrashing. Once revealed, stays revealed.
+  });
+}, observerOptions);
+
+// Observe all .reveal elements
+document.querySelectorAll('.reveal').forEach(el => {
+  observer.observe(el);
+});
+
+// Also observe the hero stagger children
+document.querySelectorAll('.reveal-stagger > .reveal').forEach(el => {
+  observer.observe(el);
+});
+
+// ============================================================
+// IMAGE LOAD ERROR HANDLING
+// ============================================================
+document.addEventListener('error', function(e) {
+  if (e.target.tagName === 'IMG') {
+    e.target.style.background = '#e8e6e2';
+    e.target.style.minHeight = '300px';
+    console.warn('Image failed to load:', e.target.dataset.src || e.target.src);
   }
-  const step = 80 / zoom;
-  switch (e.key) {
-    case 'ArrowUp': viewY += step; applyTransform(); updateEdgeIndicators(); break;
-    case 'ArrowDown': viewY -= step; applyTransform(); updateEdgeIndicators(); break;
-    case 'ArrowLeft': viewX += step; applyTransform(); updateEdgeIndicators(); break;
-    case 'ArrowRight': viewX -= step; applyTransform(); updateEdgeIndicators(); break;
-    case '+': case '=': zoomTo(zoom * 1.2); break;
-    case '-': zoomTo(zoom / 1.2); break;
-    case '0': fitToScreen(); break;
-  }
-});
+}, true);
 
-// ========== LIGHTBOX ==========
-let lightboxOpen = false;
-let currentIndex = 0;
-const lightbox = document.getElementById('lightbox');
-const lbImg = document.getElementById('lbImg');
-const lbCounter = document.getElementById('lbCounter');
-
-function openLightbox(index) {
-  currentIndex = index;
-  updateLightbox();
-  lightbox.classList.add('active');
-  lightboxOpen = true;
-  document.body.style.overflow = 'hidden';
-}
-function closeLightbox() {
-  lightbox.classList.remove('active');
-  lightboxOpen = false;
-  document.body.style.overflow = '';
-}
-function updateLightbox() {
-  lbImg.style.opacity = '0';
-  setTimeout(() => {
-    lbImg.src = PHOTO_DIR + photoFiles[currentIndex];
-    lbImg.alt = 'Jang Wonyoung Photo ' + (currentIndex + 1);
-    lbCounter.textContent = (currentIndex + 1) + ' / ' + photoFiles.length;
-    lbImg.style.opacity = '1';
-  }, 150);
-}
-function showPrev() { currentIndex = (currentIndex - 1 + photoFiles.length) % photoFiles.length; updateLightbox(); }
-function showNext() { currentIndex = (currentIndex + 1) % photoFiles.length; updateLightbox(); }
-
-document.getElementById('lbClose').addEventListener('click', closeLightbox);
-document.getElementById('lbPrev').addEventListener('click', e => { e.stopPropagation(); showPrev(); });
-document.getElementById('lbNext').addEventListener('click', e => { e.stopPropagation(); showNext(); });
-lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-
-// ========== COMPASS HINT ==========
-compassHint.classList.add('visible');
-setTimeout(() => compassHint.classList.remove('visible'), 6000);
-
-// Show hint again after fit
-document.getElementById('zoomFit').addEventListener('click', () => {
-  compassHint.classList.add('visible');
-  setTimeout(() => compassHint.classList.remove('visible'), 3000);
-});
-
-// ========== WINDOW RESIZE ==========
-window.addEventListener('resize', () => {
-  updateEdgeIndicators();
-});
-
-// ========== INITIAL EDGE CHECK ==========
-updateEdgeIndicators();
-updateZoomHUD();
-
-// ========== DOUBLE CLICK TO ZOOM IN ==========
-canvas.addEventListener('dblclick', (e) => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  const worldX = (mouseX - viewX) / zoom;
-  const worldY = (mouseY - viewY) / zoom;
-
-  if (zoom < 1.5) {
-    zoom = Math.min(ZOOM_MAX, zoom * 2);
-  } else {
-    zoom = Math.max(ZOOM_MIN, zoom * 0.5);
-  }
-  viewX = mouseX - worldX * zoom;
-  viewY = mouseY - worldY * zoom;
-  applyTransform(true);
-  updateZoomHUD();
-  updateEdgeIndicators();
-});
-
-console.log('✨ Infinite Canvas ready —', photoFiles.length, 'photos scattered across', WORLD_W + '×' + WORLD_H, 'world');
-console.log('🖱️ Drag to pan | 🖱️ Scroll to zoom | 🖱️ Double-click to zoom | ⌨️ Arrow keys to navigate');
-console.log('🔍', secretIndices.size, 'secret highlight photos hidden at edges — zoom in to find them!');
+console.log('✨ Editorial layout ready. Scroll to explore.');
+console.log('🖼️  All photos lazy-loaded via IntersectionObserver');
+console.log('📐  Layout: Asymmetric editorial — Vogue-style');
 </script>
 </body>
 </html>
