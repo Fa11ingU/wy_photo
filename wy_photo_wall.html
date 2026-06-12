@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>JANG WONYOUNG — Infinite Canvas</title>
+<style>
+/* ===== Reset ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0e;
+  --accent: #c9a87c;
+  --accent-dim: #8b7355;
+  --text: #e8e4e1;
+  --text-muted: #7d7872;
+}
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Georgia', 'Noto Serif SC', 'SimSun', serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Noise Texture ===== */
+.noise {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== Canvas ===== */
+#canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: grab;
+}
+#canvas:active { cursor: grabbing; }
+#canvas.dragging { cursor: grabbing; }
+
+#canvas-world {
+  position: absolute;
+  /* Changed by JS transform */
+  will-change: transform;
+  transform-origin: 0 0;
+}
+
+/* ===== Grid Dots Background ===== */
+#canvas-world::before {
+  content: '';
+  position: absolute;
+  /* Large enough to cover the scatter area */
+  width: 8000px; height: 6000px;
+  left: -1000px; top: -1000px;
+  background:
+    radial-gradient(circle at 0 0, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== Photo Cards ===== */
+.photo-card {
+  position: absolute;
+  z-index: 1;
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              z-index 0s step-end,
+              box-shadow 0.35s ease,
+              filter 0.35s ease;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  /* Random sizes applied via JS or inline style */
+}
+.photo-card img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Polaroid-style border for some cards */
+.photo-card.polaroid {
+  background: #f8f5f0;
+  padding: 14px 14px 50px 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+  border-radius: 2px;
+}
+.photo-card.polaroid img {
+  border-radius: 1px;
+}
+.photo-card.polaroid::after {
+  content: 'JANG WONYOUNG';
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #999;
+  font-family: 'Georgia', serif;
+  white-space: nowrap;
+}
+
+/* Tape effect for some cards */
+.photo-card.taped::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(2deg);
+  width: 60px;
+  height: 18px;
+  background: rgba(255,255,240,0.6);
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+}
+
+/* Hover state */
+.photo-card:hover {
+  z-index: 999 !important;
+  transform: scale(1.07) rotate(0deg) !important;
+  filter: drop-shadow(0 16px 40px rgba(0,0,0,0.7)) brightness(1.05);
+  transition: transform 0.3s ease-out, z-index 0s step-start, box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+/* ===== Highlight Secret Photos ===== */
+.photo-card.secret {
+  opacity: 0.35;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)) blur(0.5px);
+  transition: opacity 0.5s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.5s ease, box-shadow 0.5s ease;
+}
+.photo-card.secret:hover {
+  opacity: 1;
+  filter: drop-shadow(0 16px 40px rgba(0,0,0,0.7)) brightness(1.05) blur(0px);
+}
+.photo-card.secret .secret-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  background: rgba(0,0,0,0.6);
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(201,168,124,0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.photo-card.secret:hover .secret-badge {
+  opacity: 1;
+}
+
+/* ===== Zoom HUD ===== */
+.zoom-hud {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+}
+.zoom-btn {
+  width: 36px; height: 36px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  background: rgba(10,10,14,0.7);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+.zoom-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(10,10,14,0.9);
+}
+.zoom-level {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  padding: 4px 0;
+  text-align: center;
+  min-width: 44px;
+}
+
+/* ===== Mini Compass / Minimap hint ===== */
+.compass-hint {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.compass-hint span { opacity: 0.5; font-size: 0.8rem; }
+.compass-hint.visible { opacity: 0.7; }
+
+/* ===== Title Card ===== */
+.title-card {
+  position: absolute;
+  z-index: 10;
+  text-align: center;
+  pointer-events: auto;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              z-index 0s step-end,
+              box-shadow 0.35s ease;
+}
+.title-card-inner {
+  background: rgba(10,10,14,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 40px 50px;
+  border: 1px solid rgba(201,168,124,0.2);
+  border-radius: 2px;
+  text-align: center;
+}
+.title-card-inner .tag {
+  font-size: 0.55rem;
+  letter-spacing: 0.4em;
+  color: var(--accent-dim);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.title-card-inner h1 {
+  font-size: 3.5rem;
+  font-weight: 200;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+.title-card-inner h1 .last-name {
+  display: block;
+  font-size: 0.45em;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.title-card-inner .line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--accent-dim), transparent);
+  margin: 20px auto;
+}
+.title-card-inner p {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+  line-height: 2;
+  max-width: 300px;
+}
+.title-card:hover {
+  z-index: 999 !important;
+  transform: scale(1.03) rotate(0deg) !important;
+}
+
+/* ===== Lightbox ===== */
+.lightbox {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(3,3,7,0.97);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.lightbox.active { opacity: 1; pointer-events: auto; }
+
+.lightbox-inner {
+  position: relative; max-width: 92vw; max-height: 92vh;
+  display: flex; align-items: center; justify-content: center;
+  transform: scale(0.88);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lightbox.active .lightbox-inner { transform: scale(1); }
+
+.lightbox img {
+  max-width: 90vw; max-height: 85vh; object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.lightbox-close {
+  position: absolute; top: 28px; right: 36px; z-index: 10001;
+  width: 46px; height: 46px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.02);
+  color: var(--text); font-size: 1.4rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.4s ease; backdrop-filter: blur(12px);
+}
+.lightbox-close:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--accent); color: var(--accent);
+  transform: rotate(90deg);
+}
+
+.lightbox-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 10001;
+  width: 48px; height: 48px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.02);
+  color: var(--text); font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.4s ease; backdrop-filter: blur(12px);
+  opacity: 0;
+}
+.lightbox.active .lightbox-nav { opacity: 1; }
+.lightbox-nav:hover {
+  background: rgba(201,168,124,0.2);
+  border-color: var(--accent); color: var(--accent);
+}
+.lightbox-prev { left: 36px; }
+.lightbox-next { right: 36px; }
+
+.lightbox-counter {
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  font-size: 0.7rem; letter-spacing: 0.25em; color: var(--text-muted);
+  z-index: 10001;
+}
+
+/* ===== Tooltip on edge ===== */
+.edge-indicator {
+  position: fixed;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--accent-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.edge-indicator.active { opacity: 0.8; }
+.edge-indicator .arrow { font-size: 1rem; color: var(--accent); }
+
+.edge-top { top: 20px; left: 50%; transform: translateX(-50%); }
+.edge-bottom { bottom: 20px; left: 50%; transform: translateX(-50%); }
+.edge-left { left: 20px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+.edge-right { right: 20px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+/* ===== Footer watermark ===== */
+.footer-float {
+  position: fixed;
+  bottom: 24px;
+  left: 28px;
+  z-index: 100;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .lightbox-nav { display: none; }
+  .lightbox-close { top: 16px; right: 16px; width: 40px; height: 40px; }
+  .zoom-hud { bottom: 20px; right: 16px; }
+  .title-card-inner { padding: 24px 30px; }
+  .title-card-inner h1 { font-size: 2.2rem; }
+  .footer-float { bottom: 16px; left: 12px; font-size: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<!-- Edge indicators -->
+<div class="edge-indicator edge-top" id="edgeTop"><span class="arrow">&#8593;</span> SCROLL TO EXPLORE</div>
+<div class="edge-indicator edge-bottom" id="edgeBottom"><span class="arrow">&#8595;</span> MORE PHOTOS</div>
+<div class="edge-indicator edge-left" id="edgeLeft"><span class="arrow">&#8592;</span> MORE</div>
+<div class="edge-indicator edge-right" id="edgeRight"><span class="arrow">&#8594;</span> MORE</div>
+
+<!-- Canvas -->
+<div id="canvas">
+  <div id="canvas-world">
+    <!-- Photos & title injected by JS -->
+  </div>
+</div>
+
+<!-- Zoom HUD -->
+<div class="zoom-hud">
+  <button class="zoom-btn" id="zoomIn" aria-label="Zoom in" title="Zoom In">+</button>
+  <div class="zoom-level" id="zoomLevel">100%</div>
+  <button class="zoom-btn" id="zoomOut" aria-label="Zoom out" title="Zoom Out">&minus;</button>
+  <button class="zoom-btn" id="zoomFit" aria-label="Fit view" title="Fit All" style="font-size:0.75rem;">&#9744;</button>
+</div>
+
+<!-- Compass Hint -->
+<div class="compass-hint" id="compassHint">
+  <span>&#8598;</span> DRAG TO EXPLORE <span>&#8600;</span>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lightbox-nav lightbox-prev" id="lbPrev" aria-label="Previous">&#10094;</button>
+  <button class="lightbox-nav lightbox-next" id="lbNext" aria-label="Next">&#10095;</button>
+  <div class="lightbox-inner"><img src="" alt="" id="lbImg"></div>
+  <div class="lightbox-counter" id="lbCounter"></div>
+</div>
+
+<div class="footer-float">JANG WONYOUNG · PERSONAL PHOTO WALL © 2026</div>
+
+<script>
+// ========== PHOTO DATA ==========
+const PHOTO_DIR = 'wy_pic/';
+const photoFiles = [
+  'IMG_3971.jpeg','IMG_4083.jpeg','IMG_4085.jpeg','IMG_4086.jpeg',
+  'IMG_4087.jpeg','IMG_4088.jpeg','IMG_4089.jpeg','IMG_4090.jpeg',
+  'IMG_4091.jpeg','IMG_4092.jpeg','IMG_4093.jpeg','IMG_4094.jpeg',
+  'IMG_4095.jpeg','IMG_4096.jpeg','IMG_4097.jpeg','IMG_4098.jpeg',
+  'IMG_4099.jpeg','IMG_4100.jpeg','IMG_4101.jpeg','IMG_4102.jpeg',
+  'IMG_4103.jpeg','IMG_4104.jpeg','IMG_4105.jpeg','IMG_4106.jpeg',
+  'IMG_4107.jpeg','IMG_4108.jpeg','IMG_4109.jpeg','IMG_4111.jpeg',
+  'IMG_4112.jpeg','IMG_4113.jpeg','IMG_4114.jpeg','IMG_4115.jpeg',
+  'IMG_4116.jpeg','IMG_4117.jpeg'
+];
+
+// ========== SEEDED RANDOM (for deterministic layout) ==========
+let seed = 42;
+function seededRandom() {
+  seed = (seed * 16807 + 0) % 2147483647;
+  return (seed - 1) / 2147483646;
+}
+
+// ========== CANVAS WORLD ==========
+const canvas = document.getElementById('canvas');
+const world = document.getElementById('canvas-world');
+const compassHint = document.getElementById('compassHint');
+
+// Canvas state
+let viewX = 0;
+let viewY = 0;
+let zoom = 1;
+const ZOOM_MIN = 0.12;
+const ZOOM_MAX = 3.5;
+const ZOOM_STEP = 0.1;
+
+// World bounds (scatter area)
+const WORLD_W = 6000;
+const WORLD_H = 4500;
+const CANVAS_CENTER_X = WORLD_W / 2;
+const CANVAS_CENTER_Y = WORLD_H / 2;
+
+// Photo configs
+const PHOTO_SIZES = [
+  { w: 280, h: 380 },
+  { w: 320, h: 240 },
+  { w: 240, h: 320 },
+  { w: 300, h: 400 },
+  { w: 350, h: 280 },
+  { w: 260, h: 350 },
+  { w: 340, h: 260 },
+  { w: 280, h: 280 },
+];
+
+// ========== BUILD WORLD ==========
+const allPhotoCards = []; // { el, index, cx, cy, isSecret }
+
+// Choose 5 random indices as secrets
+const secretIndices = new Set();
+while (secretIndices.size < 5) {
+  secretIndices.add(Math.floor(seededRandom() * photoFiles.length));
+}
+
+// Generate layout positions using a Poisson-like distribution with jitter
+function generateLayout() {
+  const positions = [];
+  const margin = 300;
+  const minDist = 250;
+
+  // Use a grid with heavy jitter for organic placement
+  const cols = 7;
+  const rows = Math.ceil(photoFiles.length / cols);
+  const cellW = (WORLD_W - margin * 2) / cols;
+  const cellH = (WORLD_H - margin * 2) / rows;
+
+  photoFiles.forEach((_, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const baseX = margin + col * cellW + cellW / 2;
+    const baseY = margin + row * cellH + cellH / 2;
+
+    // Add significant random jitter
+    const jitterX = (seededRandom() - 0.5) * cellW * 0.7;
+    const jitterY = (seededRandom() - 0.5) * cellH * 0.7;
+
+    // Push edge secrets further out
+    const isSecret = secretIndices.has(i);
+    let extraX = 0, extraY = 0;
+    if (isSecret) {
+      const dir = seededRandom();
+      if (dir < 0.25) { extraX = -seededRandom() * 400 - 100; }
+      else if (dir < 0.5) { extraX = seededRandom() * 400 + 100; }
+      else if (dir < 0.75) { extraY = -seededRandom() * 400 - 100; }
+      else { extraY = seededRandom() * 400 + 100; }
+    }
+
+    positions.push({
+      x: baseX + jitterX + extraX,
+      y: baseY + jitterY + extraY,
+      isSecret,
+      index: i,
+    });
+  });
+  return positions;
+}
+
+const layout = generateLayout();
+
+// Build DOM
+layout.forEach((pos) => {
+  const { x, y, isSecret, index } = pos;
+
+  const card = document.createElement('div');
+  card.className = 'photo-card' + (isSecret ? ' secret' : '');
+
+  // Randomly apply polaroid or taped style
+  const styleRoll = seededRandom();
+  if (styleRoll < 0.2) card.classList.add('polaroid');
+  else if (styleRoll < 0.35) card.classList.add('taped');
+
+  // Random size
+  const size = PHOTO_SIZES[Math.floor(seededRandom() * PHOTO_SIZES.length)];
+  const isPolaroid = card.classList.contains('polaroid');
+  const w = size.w * (0.8 + seededRandom() * 0.5);
+  const h = size.h * (0.8 + seededRandom() * 0.5);
+
+  // Random rotation (-6deg to 6deg, sometimes a bit more)
+  let rotation = (seededRandom() - 0.5) * 12;
+  if (seededRandom() < 0.3) rotation = (seededRandom() - 0.5) * 3; // subtle
+  if (seededRandom() < 0.12) rotation = (seededRandom() - 0.5) * 18; // more extreme
+
+  // Store metadata
+  card.dataset.index = index;
+  card.dataset.cx = x;
+  card.dataset.cy = y;
+  card.dataset.rotation = rotation;
+  card.dataset.isSecret = isSecret ? '1' : '0';
+
+  // Position around center of image
+  card.style.left = (x - w / 2) + 'px';
+  card.style.top = (y - h / 2) + 'px';
+  card.style.width = w + 'px';
+  card.style.height = isPolaroid ? (h + 40) + 'px' : h + 'px';
+  card.style.transform = `rotate(${rotation.toFixed(1)}deg)`;
+
+  // Image
+  const img = document.createElement('img');
+  img.src = PHOTO_DIR + photoFiles[index];
+  img.alt = 'Jang Wonyoung Photo ' + (index + 1);
+  img.loading = 'lazy';
+  if (isPolaroid) img.style.height = h + 'px';
+  card.appendChild(img);
+
+  // Secret badge
+  if (isSecret) {
+    const badge = document.createElement('span');
+    badge.className = 'secret-badge';
+    badge.textContent = '✦ HIGHLIGHT';
+    card.appendChild(badge);
+  }
+
+  // Click handler
+  card.addEventListener('click', (e) => {
+    // Don't trigger lightbox if we were dragging
+    if (wasDragging) return;
+    openLightbox(index);
+  });
+
+  world.appendChild(card);
+  allPhotoCards.push({ el: card, index, cx: x, cy: y, isSecret });
+});
+
+// ========== TITLE CARD ==========
+const titleCard = document.createElement('div');
+titleCard.className = 'title-card';
+titleCard.style.left = (CANVAS_CENTER_X - 220) + 'px';
+titleCard.style.top = (CANVAS_CENTER_Y - 180) + 'px';
+titleCard.style.transform = 'rotate(-1.5deg)';
+titleCard.innerHTML = `
+  <div class="title-card-inner">
+    <div class="tag">Photo Gallery</div>
+    <h1><span class="last-name">JANG</span>WONYOUNG</h1>
+    <div class="line"></div>
+    <p>拖拽探索 · 滚轮缩放<br>Drag to explore · Scroll to zoom</p>
+  </div>`;
+world.appendChild(titleCard);
+
+// ========== CANVAS TRANSFORM ==========
+function applyTransform(animate = false) {
+  if (animate) {
+    world.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+    setTimeout(() => { world.style.transition = ''; }, 500);
+  }
+  world.style.transform = `translate(${viewX}px, ${viewY}px) scale(${zoom})`;
+}
+
+// ========== INITIAL VIEW (fit to screen) ==========
+function fitToScreen() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const fitZoom = Math.min(vw / WORLD_W, vh / WORLD_H, 0.65);
+  zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
+  viewX = (vw - WORLD_W * zoom) / 2;
+  viewY = (vh - WORLD_H * zoom) / 2;
+  applyTransform();
+  updateZoomHUD();
+}
+
+fitToScreen();
+
+// ========== PAN LOGIC ==========
+let isDragging = false;
+let wasDragging = false;
+let dragStartX = 0, dragStartY = 0;
+let viewStartX = 0, viewStartY = 0;
+let dragMoved = 0;
+const DRAG_THRESHOLD = 5;
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.photo-card') || e.target.closest('.title-card')) {
+    // On photo/title: allow click, but also allow drag
+    isDragging = true;
+    wasDragging = false;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    viewStartX = viewX;
+    viewStartY = viewY;
+    dragMoved = 0;
+    canvas.setPointerCapture(e.pointerId);
+    return;
+  }
+  isDragging = true;
+  wasDragging = false;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  viewStartX = viewX;
+  viewStartY = viewY;
+  dragMoved = 0;
+  canvas.setPointerCapture(e.pointerId);
+  canvas.classList.add('dragging');
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - dragStartX;
+  const dy = e.clientY - dragStartY;
+  dragMoved = Math.abs(dx) + Math.abs(dy);
+  if (dragMoved > DRAG_THRESHOLD) {
+    wasDragging = true;
+  }
+  viewX = viewStartX + dx;
+  viewY = viewStartY + dy;
+  applyTransform();
+
+  // Show/hide compass
+  if (dragMoved > 20) {
+    compassHint.classList.remove('visible');
+  }
+
+  // Edge indicators
+  updateEdgeIndicators();
+});
+
+canvas.addEventListener('pointerup', (e) => {
+  isDragging = false;
+  canvas.classList.remove('dragging');
+  canvas.releasePointerCapture(e.pointerId);
+
+  // Reset click flag after a frame
+  requestAnimationFrame(() => {
+    setTimeout(() => { wasDragging = false; }, 50);
+  });
+});
+
+canvas.addEventListener('pointerleave', () => {
+  isDragging = false;
+  canvas.classList.remove('dragging');
+});
+
+// ========== ZOOM LOGIC (Scroll Wheel) ==========
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  // Point in world space before zoom
+  const worldX = (mouseX - viewX) / zoom;
+  const worldY = (mouseY - viewY) / zoom;
+
+  // Zoom
+  const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+  const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + delta * (zoom * 0.5 + 0.5)));
+  const zoomFactor = newZoom / zoom;
+  zoom = newZoom;
+
+  // Adjust view to keep mouse point stable
+  viewX = mouseX - worldX * zoom;
+  viewY = mouseY - worldY * zoom;
+
+  applyTransform();
+  updateZoomHUD();
+  updateEdgeIndicators();
+  compassHint.classList.remove('visible');
+}, { passive: false });
+
+// ========== PINCH ZOOM (Mobile) ==========
+let pinchStartDist = 0;
+let pinchStartZoom = 1;
+let pinchCenterX = 0;
+let pinchCenterY = 0;
+let pinchStartViewX = 0;
+let pinchStartViewY = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    pinchStartDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    pinchStartZoom = zoom;
+    pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    pinchStartViewX = viewX;
+    pinchStartViewY = viewY;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchStartZoom * (dist / pinchStartDist)));
+    const zoomFactor = newZoom / pinchStartZoom;
+
+    const rect = canvas.getBoundingClientRect();
+    const cx = pinchCenterX - rect.left;
+    const cy = pinchCenterY - rect.top;
+
+    const worldX = (cx - pinchStartViewX) / pinchStartZoom;
+    const worldY = (cy - pinchStartViewY) / pinchStartZoom;
+
+    zoom = newZoom;
+    viewX = cx - worldX * zoom;
+    viewY = cy - worldY * zoom;
+
+    applyTransform();
+    updateZoomHUD();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+  pinchStartDist = 0;
+});
+
+// ========== ZOOM BUTTONS ==========
+document.getElementById('zoomIn').addEventListener('click', () => {
+  zoomTo(zoom * 1.3);
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  zoomTo(zoom / 1.3);
+});
+document.getElementById('zoomFit').addEventListener('click', () => {
+  fitToScreen();
+  compassHint.classList.add('visible');
+  setTimeout(() => compassHint.classList.remove('visible'), 3000);
+});
+
+function zoomTo(targetZoom) {
+  const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom));
+  const rect = canvas.getBoundingClientRect();
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  const worldX = (cx - viewX) / zoom;
+  const worldY = (cy - viewY) / zoom;
+  zoom = clamped;
+  viewX = cx - worldX * zoom;
+  viewY = cy - worldY * zoom;
+  applyTransform(true);
+  updateZoomHUD();
+  updateEdgeIndicators();
+}
+
+function updateZoomHUD() {
+  document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+}
+
+// ========== EDGE INDICATORS ==========
+const edgeEls = {
+  top: document.getElementById('edgeTop'),
+  bottom: document.getElementById('edgeBottom'),
+  left: document.getElementById('edgeLeft'),
+  right: document.getElementById('edgeRight'),
+};
+
+function updateEdgeIndicators() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const worldLeft = -viewX / zoom;
+  const worldTop = -viewY / zoom;
+  const worldRight = worldLeft + vw / zoom;
+  const worldBottom = worldTop + vh / zoom;
+
+  const threshold = 100;
+  edgeEls.top.classList.toggle('active', worldTop < threshold);
+  edgeEls.bottom.classList.toggle('active', worldBottom > WORLD_H - threshold);
+  edgeEls.left.classList.toggle('active', worldLeft < threshold);
+  edgeEls.right.classList.toggle('active', worldRight > WORLD_W - threshold);
+}
+
+// ========== KEYBOARD ==========
+document.addEventListener('keydown', (e) => {
+  if (lightboxOpen) {
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') showPrev();
+    if (e.key === 'ArrowRight') showNext();
+    return;
+  }
+  const step = 80 / zoom;
+  switch (e.key) {
+    case 'ArrowUp': viewY += step; applyTransform(); updateEdgeIndicators(); break;
+    case 'ArrowDown': viewY -= step; applyTransform(); updateEdgeIndicators(); break;
+    case 'ArrowLeft': viewX += step; applyTransform(); updateEdgeIndicators(); break;
+    case 'ArrowRight': viewX -= step; applyTransform(); updateEdgeIndicators(); break;
+    case '+': case '=': zoomTo(zoom * 1.2); break;
+    case '-': zoomTo(zoom / 1.2); break;
+    case '0': fitToScreen(); break;
+  }
+});
+
+// ========== LIGHTBOX ==========
+let lightboxOpen = false;
+let currentIndex = 0;
+const lightbox = document.getElementById('lightbox');
+const lbImg = document.getElementById('lbImg');
+const lbCounter = document.getElementById('lbCounter');
+
+function openLightbox(index) {
+  currentIndex = index;
+  updateLightbox();
+  lightbox.classList.add('active');
+  lightboxOpen = true;
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  lightbox.classList.remove('active');
+  lightboxOpen = false;
+  document.body.style.overflow = '';
+}
+function updateLightbox() {
+  lbImg.style.opacity = '0';
+  setTimeout(() => {
+    lbImg.src = PHOTO_DIR + photoFiles[currentIndex];
+    lbImg.alt = 'Jang Wonyoung Photo ' + (currentIndex + 1);
+    lbCounter.textContent = (currentIndex + 1) + ' / ' + photoFiles.length;
+    lbImg.style.opacity = '1';
+  }, 150);
+}
+function showPrev() { currentIndex = (currentIndex - 1 + photoFiles.length) % photoFiles.length; updateLightbox(); }
+function showNext() { currentIndex = (currentIndex + 1) % photoFiles.length; updateLightbox(); }
+
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbPrev').addEventListener('click', e => { e.stopPropagation(); showPrev(); });
+document.getElementById('lbNext').addEventListener('click', e => { e.stopPropagation(); showNext(); });
+lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+// ========== COMPASS HINT ==========
+compassHint.classList.add('visible');
+setTimeout(() => compassHint.classList.remove('visible'), 6000);
+
+// Show hint again after fit
+document.getElementById('zoomFit').addEventListener('click', () => {
+  compassHint.classList.add('visible');
+  setTimeout(() => compassHint.classList.remove('visible'), 3000);
+});
+
+// ========== WINDOW RESIZE ==========
+window.addEventListener('resize', () => {
+  updateEdgeIndicators();
+});
+
+// ========== INITIAL EDGE CHECK ==========
+updateEdgeIndicators();
+updateZoomHUD();
+
+// ========== DOUBLE CLICK TO ZOOM IN ==========
+canvas.addEventListener('dblclick', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  const worldX = (mouseX - viewX) / zoom;
+  const worldY = (mouseY - viewY) / zoom;
+
+  if (zoom < 1.5) {
+    zoom = Math.min(ZOOM_MAX, zoom * 2);
+  } else {
+    zoom = Math.max(ZOOM_MIN, zoom * 0.5);
+  }
+  viewX = mouseX - worldX * zoom;
+  viewY = mouseY - worldY * zoom;
+  applyTransform(true);
+  updateZoomHUD();
+  updateEdgeIndicators();
+});
+
+console.log('✨ Infinite Canvas ready —', photoFiles.length, 'photos scattered across', WORLD_W + '×' + WORLD_H, 'world');
+console.log('🖱️ Drag to pan | 🖱️ Scroll to zoom | 🖱️ Double-click to zoom | ⌨️ Arrow keys to navigate');
+console.log('🔍', secretIndices.size, 'secret highlight photos hidden at edges — zoom in to find them!');
+</script>
+</body>
+</html>
