@@ -864,9 +864,10 @@ shuffled.sort((a, b) => a.r - b.r);
 
     const img = document.createElement('img');
     img.loading = 'lazy';
+    img.decoding = 'async';
     img.alt = 'Thumbnail ' + (i + 1);
-    // Use data-src for lazy loading — swap on intersection
-    img.dataset.src = PHOTO_DIR + pos.file;
+    // Use generated thumbnails (200px, ~6-10KB each vs 1-5MB originals)
+    img.dataset.src = 'wy_pic/thumbs/' + pos.file.replace(/\.jpe?g$/i, '.jpg');
     if (pos.isPolaroid) {
       img.style.height = pos.h + 'px';
     }
@@ -876,9 +877,10 @@ shuffled.sort((a, b) => a.r - b.r);
     // Click to scroll to the corresponding module
     leaf.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Find and scroll to the first module containing this photo
+      // Match by index in shuffled array
+      const targetIdx = i;
+      const targetFile = photoFiles[targetIdx];
       const modules = document.querySelectorAll('.module, .module-d');
-      const targetFile = pos.file;
       for (const mod of modules) {
         const imgs = mod.querySelectorAll('img[data-src], img[src]');
         for (const mi of imgs) {
@@ -930,25 +932,116 @@ const editorialLabels = [
   'Composition', 'The Look', 'Lumière', 'Character Study'
 ];
 
-const editorialQuotes = [
-  'Light makes photography. Embrace light. Admire it. Love it.',
-  'A portrait is not made in the camera but on either side of it.',
-  'The best thing about a picture is that it never changes.',
-  'In photography there is a reality so subtle it becomes more real than reality.',
-  'What I like about photographs is that they capture a moment.',
-  'The camera is an instrument that teaches people how to see.',
-  'Photography is the story I fail to put into words.',
-  'A good photograph is one that communicates a fact.',
-  'Taking pictures is savoring life intensely, every hundredth of a second.',
-  'The whole point of taking pictures is so that you don\'t have to explain things with words.',
-  'When you photograph people in color, you photograph their clothes.',
-  'To me, photography is the simultaneous recognition of the significance of an event.',
-  'A photograph is a secret about a secret.',
-  'The eye should learn to listen before it looks.',
-  'Beauty can be seen in all things.',
-  'There is one thing the photograph must contain — the humanity of the moment.',
-  'Photography is a way of feeling, of touching, of loving.',
-  'It is an illusion that photos are made with the camera.'
+// Wonyoung-specific editorial titles — each module gets a unique, fitting line
+const wonyoungTitles = [
+  'Born to shine,<br>built to inspire',
+  'A gaze that holds<br>a thousand stories',
+  'Effortless elegance<br>in every frame',
+  'The world through<br>her eyes',
+  'Soft power,<br>quiet confidence',
+  'Where youth meets<br>timeless grace',
+  'A flower in full bloom,<br>unfolding endlessly',
+  'The calm before<br>the spotlight',
+  'Every glance<br>a masterpiece',
+  'Silk and steel —<br>the modern muse',
+  'Posing like the world<br>is her runway',
+  'The art of being<br>simply herself',
+  'A whisper of charm,<br>a roar of presence',
+  'Golden hour follows<br>wherever she goes',
+  'More than a portrait —<br>a feeling',
+  'Turning heads,<br>turning pages',
+  'When the lens loves<br>what it sees',
+  'Precision in poise,<br>poetry in motion',
+  'The quiet brilliance<br>of a star',
+  'Radiant from every angle,<br>without exception',
+  'A dream in soft focus,<br>a reality in sharp detail',
+  'Between innocence<br>and allure',
+  'An icon in the making —<br>already complete',
+  'Grace that needs<br>no introduction',
+  'Not just seen,<br>but remembered',
+  'Light bends softly<br>around her silhouette',
+  'A portrait worth<br>a thousand replays',
+  'The camera blushes —<br>she does not',
+  'One look is all it takes<br>to understand',
+  'Effortlessly iconic,<br>unapologetically herself',
+  'Defining beauty<br>on her own terms',
+  'A study in contrast —<br>bold yet delicate',
+  'The kind of beauty<br>that lingers in memory',
+  'Capturing the intangible —<br>presence itself'
+];
+
+const wonyoungCaptions = [
+  'From center stage to candid moments, every expression reveals another layer of her artistry.',
+  'With a single glance, she transforms the ordinary into something worthy of a magazine cover.',
+  'Youth and sophistication rarely coexist so naturally — here they blend into something rare.',
+  'The space around her isn\'t empty; it\'s charged with the anticipation only true stardom brings.',
+  'Delicate features framed by an even stronger spirit — this is the duality that captivates millions.',
+  'In a world of passing trends, her radiance remains constant, steady, and unmistakable.',
+  'A rising star of the fourth generation, redefining what it means to be an idol with each appearance.',
+  'Beyond the stage lights and center positions lies a quiet elegance that photographs can only hint at.',
+  'She commands the frame without demanding attention — the most powerful kind of presence.',
+  'From rehearsal rooms to red carpets, the same grace follows her wherever she steps.',
+  'There is an art to making complexity look effortless, and she has mastered it completely.',
+  'A gaze that connects across the distance between stage and audience, intimate and electric.',
+  'The camera doesn\'t capture her — it witnesses her. There\'s a difference.',
+  'Each photograph is a collaboration between light, lens, and a subject who needs no direction.',
+  'Beneath the glamour is discipline; beneath the smile is strength. This is the real Wonyoung.',
+  'She doesn\'t just wear the spotlight — she wears it like a second skin, natural and luminous.',
+  'There\'s a reason the frame gravitates toward her: some people are simply magnetic.',
+  'The elegance of a classical painting meets the energy of a new generation.',
+  'What the camera captures is only half the story — the rest lives in the feeling afterward.',
+  'Every pose tells a different chapter of the same truth: she was born for this.',
+  'The kind of beauty that doesn\'t shout, yet fills every corner of the room.',
+  'Between takes, between stages, between moments — still captivating. Always.',
+  'A visual language all her own, spoken fluently from the very first frame.',
+  'The fourth wall dissolves when she looks into the lens. You\'re not watching — you\'re part of it.',
+  'Some images fade with time; these only grow more significant, more resonant.',
+  'She moves through the world like a melody — unforgettable, undeniable, impossible to ignore.',
+  'The wardrobe changes, the set transforms, but the essence remains unmistakably her.',
+  'When the music stops and the lights dim, what remains is the raw presence of someone extraordinary.',
+  'A career of milestones captured in single frames, each one a marker on an extraordinary journey.',
+  'Natural beauty amplified by years of dedication — this is what excellence looks like up close.',
+  'The secret isn\'t just how she looks at the camera, but how the camera looks at her.',
+  'You can photograph a thousand faces, but you won\'t find another quite like this.',
+  'In the quiet between poses, when the mask drops, something even more beautiful emerges.',
+  'She arrived like a promise and stayed like a legacy — this is only the beginning.'
+];
+
+const wonyoungQuotes = [
+  'I want to be someone who inspires others just by being myself.',
+  'The stage is where I feel most alive. It\'s where I belong.',
+  'Every day is a new opportunity to grow and become a better version of myself.',
+  'I believe that confidence comes from within — not from what others say about you.',
+  'Hard work always pays off, even if you can\'t see it right away.',
+  'My dream is to make people smile through everything I do.',
+  'Being on stage is a gift I will never take for granted.',
+  'There is beauty in being different, in having your own unique color.',
+  'I want to be remembered as someone who gave her all in every moment.',
+  'The support of my fans is what keeps me going through the hardest days.',
+  'I\'m still learning and growing. There is so much more I want to show.',
+  'If I can touch even one person\'s heart, then everything is worth it.',
+  'Stay true to yourself — that\'s the most important thing I\'ve learned.',
+  'I don\'t want to be perfect. I want to be real, honest, and sincere.',
+  'Every performance is a chance to connect with someone watching.',
+  'The journey matters more than the destination. Enjoy every step.',
+  'I hope to be a light in someone\'s life, even on their darkest days.',
+  'Dreams don\'t come true overnight. They are built one day at a time.',
+  'I believe in the power of positivity — it changes everything.',
+  'Never forget the people who helped you get to where you are today.',
+  'The best is yet to come. I truly believe that with all my heart.',
+  'I want to keep challenging myself and never settle for where I am.',
+  'Being an idol isn\'t just a job — it\'s a promise to those who believe in you.',
+  'I want my legacy to be one of kindness, hard work, and sincerity.',
+  'When I look at my fans, I see the reason I do what I do.',
+  'There is nothing more rewarding than seeing someone smile because of you.',
+  'I try to live each day with gratitude, knowing how precious every moment is.',
+  'The spotlight is bright, but what keeps me grounded are the people who support me.',
+  'I want to be someone who makes this world just a little bit brighter.',
+  'Every challenge I face is just another step toward the person I want to become.',
+  'I believe that beauty radiates from within — from a kind heart and a strong spirit.',
+  'There is magic in the small moments we often overlook. I try to cherish them all.',
+  'My story is still being written, and I\'m excited for every chapter ahead.',
+  'To everyone who believes in me: thank you. I will continue to work hard for you.'
 ];
 
 function pick(arr, i) { return arr[i % arr.length]; }
@@ -958,6 +1051,8 @@ function pick(arr, i) { return arr[i % arr.length]; }
 // ============================================================
 function buildModuleA(file, idx, reverse) {
   const label = pick(editorialLabels, idx);
+  const title = wonyoungTitles[idx % wonyoungTitles.length];
+  const caption = wonyoungCaptions[idx % wonyoungCaptions.length];
   const cls = reverse ? 'module module-a reverse reveal' : 'module module-a reveal';
   return `
     <section class="${cls}">
@@ -968,32 +1063,34 @@ function buildModuleA(file, idx, reverse) {
       </div>
       <div class="a-copy">
         <div class="a-label">${label} &mdash; No. ${String(idx+1).padStart(2,'0')}</div>
-        <div class="a-title">The space between<br>light and shadow</div>
-        <div class="a-note">A study in editorial composition. Each frame is a deliberate conversation between subject and void.</div>
+        <div class="a-title">${title}</div>
+        <div class="a-note">${caption}</div>
       </div>
     </section>`;
 }
 
 function buildModuleB(file, idx) {
+  const title = wonyoungTitles[idx % wonyoungTitles.length];
   return `
     <section class="module module-b reveal">
       <div class="b-frame">
         <div class="photo-wrapper">
           <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
         </div>
-        <div class="b-caption">${pick(editorialLabels, idx)} &mdash; No. ${String(idx+1).padStart(2,'0')} &mdash; Horizontal Study</div>
+        <div class="b-caption">${pick(editorialLabels, idx)} &mdash; No. ${String(idx+1).padStart(2,'0')} &mdash; ${title.replace(/<br>/g, ' / ')}</div>
       </div>
     </section>`;
 }
 
 function buildModuleC(fileMain, fileSub, idx, reverse) {
   const label = pick(editorialLabels, idx);
+  const title = wonyoungTitles[idx % wonyoungTitles.length];
   const cls = reverse ? 'module module-c reverse reveal' : 'module module-c reveal';
   return `
     <section class="${cls}">
       <div class="c-caption">
         <div class="c-label">${label} &mdash; Diptych No. ${String(idx+1).padStart(2,'0')}</div>
-        <div class="c-title">A visual<br>conversation</div>
+        <div class="c-title">${title}</div>
       </div>
       <div class="c-main">
         <div class="photo-wrapper">
@@ -1022,7 +1119,7 @@ function buildModuleD(file, idx) {
 }
 
 function buildModuleE(file, idx, reverse) {
-  const quote = pick(editorialQuotes, idx);
+  const quote = wonyoungQuotes[idx % wonyoungQuotes.length];
   const cls = reverse ? 'module module-e reveal' : 'module module-e reveal';
   return `
     <section class="${cls}">
@@ -1051,40 +1148,17 @@ function buildModuleE(file, idx, reverse) {
 const layoutPlan = [];
 let pi = 0;
 
-// Helper: consume one photo from shuffled array, returns {file, idx}
 function next() {
   const item = shuffled[pi++];
   return { file: item.file, idx: item.idx };
 }
 
-// Helper: push a module with idx stored at definition time (not build time)
-function P(type, opts = {}) {
-  const entry = { type, ...opts };
-  layoutPlan.push(entry);
-}
-
-// 1. B — gentle opening (1)
-P('B', next());
-// 2. A — tension close-up (1)
-P('A', { ...next(), reverse: false });
-// 3. C — diagonal duo (2)
-P('C', { fileMain: next().file, fileSub: next().file, idx: next().idx, reverse: false });
-// → adjust: C needs its own idx. Use the first photo's idx.
-// Actually let me restructure — store idx explicitly on each entry
-
-// Clear and redo cleanly
-layoutPlan.length = 0;
-pi = 0;
-
 function plan(type, config = {}) {
   layoutPlan.push({ type, ...config });
 }
 
-// Consume photos: track how many used so far
-// A=1, B=1, C=2, D=1, E=1, divider=0
-// Pattern for 34: B(1) A(2) C(4) D(5) E(6) A(7) C(9) B(10) D(11) E(12) A(13) C(15)
-//                [divider]
-//                B(16) C(18) D(19) E(20) A(21) C(23) B(24) D(25) E(26) A(27) C(29) B(30) B(31) A(32) E(33) D(34)
+// Layout: 34 photos → B-A-C-D-E-A-C-B-D-E-A-C-[divider]-B-C-D-E-A-C-B-D-E-A-C-B-B-A-E-D
+// A=1, B=1, C=2, D=1, E=1, divider=0 → total=34 ✓
 
 plan('B', next());                          //  1
 plan('A', { ...next(), reverse: false });   //  2
@@ -1143,13 +1217,7 @@ function buildHTML(p) {
 }
 
 let htmlStr = '';
-layoutPlan.forEach(p => {
-  const html = buildHTML(p);
-  if (p.type !== 'divider') {
-    // Track index for staggered animation identity — we assign after build
-  }
-  htmlStr += html;
-});
+layoutPlan.forEach(p => { htmlStr += buildHTML(p); });
 
 hero.insertAdjacentHTML('afterend', htmlStr);
 
