@@ -2,763 +2,208 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JANG WONYOUNG — Editorial</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VISUAL EP: WONYOUNG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:ital,wght@0,200;0,300;0,400;1,200;1,300&display=swap" rel="stylesheet">
 <style>
-/* ============================================================
-   RESET & BASE
-   ============================================================ */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --bg: #f9f8f6;
-  --text: #1a1a1c;
-  --text-muted: #6b6b6f;
-  --text-faint: #a8a8ac;
-  --accent: #b8976e;
-  --spacing-xs: 8px;
-  --spacing-sm: 24px;
-  --spacing-md: 48px;
-  --spacing-lg: 80px;
-  --spacing-xl: 140px;
-  --spacing-2xl: 200px;
-  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0c;--bg2:#0e0e12;--surface:#121216;--surface2:#1a1a20;
+  --text:#eae6e2;--text-dim:#8a8580;--text-faint:#555258;
+  --accent:#c9a87c;--accent-dim:#8b7355;
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{
+  font-family:'Inter','Helvetica Neue',sans-serif;font-weight:300;
+  background:var(--bg);color:var(--text);
+  overflow:hidden;height:100vh;width:100vw;
+  -webkit-user-select:none;user-select:none;
 }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* Ambient */
+.ambient{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;animation:fi 0.8s 0.3s ease forwards}
+.ambient-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(80px);opacity:0.3;transition:opacity 1.2s ease}
+.ambient-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,10,12,0.6)0%,rgba(10,10,12,0.2)50%,rgba(10,10,12,0.6)100%)}
+.noise{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
-body {
-  font-family: 'Inter', 'Helvetica Neue', 'PingFang SC', sans-serif;
-  font-weight: 300;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  overflow-x: hidden;
-}
+/* App Layout */
+.app{position:relative;z-index:1;display:flex;height:100vh;width:100vw;opacity:0;animation:fi 0.8s 0.4s ease forwards}
+@keyframes fi{to{opacity:1}}
+.photo-zone{flex:0 0 60%;position:relative;overflow:hidden;background:var(--bg)}
+.panel-zone{flex:0 0 40%;display:flex;flex-direction:column;padding:48px 40px 0;position:relative}
+.panel-scroll{flex:1;overflow-y:auto;padding-bottom:24px}
 
-/* Selection */
-::selection {
-  background: rgba(184, 151, 110, 0.2);
-  color: var(--text);
-}
+/* Viewer */
+.viewer{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+.photo-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.photo-frame img{width:100%;height:100%;object-fit:cover;display:block;will-change:transform,opacity}
+.photo-frame.A{z-index:2}
+.photo-frame.B{z-index:1}
 
-/* ============================================================
-   TYPOGRAPHY
-   ============================================================ */
-.serif       { font-family: 'Cormorant Garamond', 'Georgia', 'Noto Serif SC', serif; }
-.sans        { font-family: 'Inter', 'Helvetica Neue', 'PingFang SC', sans-serif; }
-.fw-200      { font-weight: 200; }
-.fw-300      { font-weight: 300; }
-.fw-400      { font-weight: 400; }
-.italic      { font-style: italic; }
-.tracking-xs { letter-spacing: 0.02em; }
-.tracking-sm { letter-spacing: 0.06em; }
-.tracking-md { letter-spacing: 0.14em; }
-.tracking-lg { letter-spacing: 0.26em; }
-.text-muted  { color: var(--text-muted); }
-.text-faint  { color: var(--text-faint); }
-.text-accent { color: var(--accent); }
+/* Ken Burns */
+.photo-frame.A img{animation:kenBurns 6s var(--ease-out) forwards}
+.photo-frame.B img{animation:kenBurns 6s var(--ease-out) forwards}
+.photo-frame.paused img{animation-play-state:paused}
+@keyframes kenBurns{0%{transform:scale(1)}100%{transform:scale(1.04)}}
 
-/* ============================================================
-   HERO — Full viewport intro
-   ============================================================ */
-.hero {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--spacing-lg);
-}
+/* Cross-fade: A fade out / B fade in */
+.photo-frame.A.fade-out img{transition:opacity 0.8s ease;opacity:0}
+.photo-frame.B.fade-in img{opacity:0;transition:opacity 0.8s ease}
+.photo-frame.B.fade-in.active img{opacity:1}
+.photo-frame.B.fade-in img{opacity:0;transition:opacity 0.8s ease}
+.photo-frame.done img{opacity:0;transition:none}
 
-/* ============================================================
-   LEAF PILE — Scattered thumbnail collage
-   ============================================================ */
-.leaf-pile {
-  position: relative;
-  width: 100%;
-  max-width: 680px;
-  height: 320px;
-  margin: 0 auto var(--spacing-lg);
-  pointer-events: auto;
-}
+/* Album Header */
+.album-header{margin-bottom:36px}
+.album-header .ep-label{font-size:0.55rem;font-weight:400;letter-spacing:0.4em;text-transform:uppercase;color:var(--accent-dim);margin-bottom:8px}
+.album-header h1{font-family:'Cormorant Garamond',serif;font-size:clamp(1.4rem,2.5vw,2.2rem);font-weight:300;letter-spacing:0.04em;color:var(--text);line-height:1.2}
+.album-header .divider{width:24px;height:1px;background:var(--accent-dim);margin:14px 0;opacity:0.4}
 
-.leaf-pile .leaf {
-  position: absolute;
-  cursor: pointer;
-  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
-              z-index 0s step-end;
-  will-change: transform;
-}
+/* Tracklist */
+.tracklist{display:flex;flex-direction:column;gap:2px}
+.chapter-group{margin-bottom:18px}
+.chapter-header{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.chapter-header .ch-num{font-family:'Cormorant Garamond',serif;font-size:0.7rem;font-weight:400;font-style:italic;color:var(--accent-dim);width:18px}
+.chapter-header .ch-title{font-size:0.55rem;font-weight:400;letter-spacing:0.22em;text-transform:uppercase;color:var(--text-dim)}
+.chapter-header .ch-sub{font-size:0.5rem;font-weight:200;letter-spacing:0.12em;color:var(--text-faint);margin-left:auto}
+.chapter-header .ch-line{flex:1;height:1px;background:var(--surface2)}
+.track{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;border-radius:3px;transition:all 0.3s ease;position:relative}
+.track:hover{background:rgba(255,255,255,0.03)}
+.track.active{background:rgba(201,168,124,0.06)}
+.track.active .t-num{color:var(--accent)}
+.track.active .t-label{color:var(--text)}
+.track .t-num{font-family:'Cormorant Garamond',serif;font-size:0.65rem;font-weight:400;color:var(--text-faint);width:24px;transition:color 0.3s}
+.track .t-label{font-size:0.65rem;font-weight:300;letter-spacing:0.06em;color:var(--text-dim);transition:color 0.3s}
+.track .t-duration{margin-left:auto;font-size:0.5rem;font-weight:200;color:var(--text-faint)}
 
-.leaf-pile .leaf img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 3px;
-  box-shadow:
-    0 2px 8px rgba(0,0,0,0.12),
-    0 8px 20px rgba(0,0,0,0.06);
-  transition: box-shadow 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* PC Player — sticky at bottom of panel */
+.player-controls{
+  flex-shrink:0;padding:20px 40px 24px;margin-left:-40px;margin-right:-40px;
+  border-top:1px solid var(--surface2);
+  background:var(--bg);
 }
+.controls-row{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.btn-play{width:38px;height:38px;border:1px solid rgba(255,255,255,0.12);border-radius:50%;background:rgba(255,255,255,0.04);color:var(--text);font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.3s ease;backdrop-filter:blur(10px)}
+.btn-play:hover{border-color:var(--accent);color:var(--accent);background:rgba(201,168,124,0.08)}
+.btn-prev,.btn-next{width:26px;height:26px;border:none;background:none;color:var(--text-dim);font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color 0.3s}
+.btn-prev:hover,.btn-next:hover{color:var(--accent)}
+.track-info{flex:1;min-width:0}
+.track-info .ti-name{font-size:.6rem;font-weight:300;letter-spacing:.06em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-info .ti-chapter{font-size:.48rem;font-weight:200;letter-spacing:.12em;color:var(--text-faint);margin-top:2px}
+.progress-wrap{width:100%;height:3px;background:var(--surface2);border-radius:2px;cursor:pointer;position:relative}
+.progress-bar{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.1s linear}
 
-/* Polaroid variant */
-.leaf-pile .leaf.polaroid-leaf {
-  background: #fff;
-  padding: 6px 6px 24px 6px;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-  border-radius: 2px;
-}
-.leaf-pile .leaf.polaroid-leaf img {
-  border-radius: 1px;
-  box-shadow: none;
-}
+/* Mobile */
+@media(max-width:768px){
+  .app{flex-direction:column}
+  .photo-zone{flex:0 0 65%}
+  .panel-zone{flex:1;padding:20px 18px 0}
+  .panel-scroll{flex:1;overflow-y:auto;padding-bottom:20px}
+  .album-header{margin-bottom:16px}
+  .album-header h1{font-size:1.1rem}
+  .chapter-group{margin-bottom:12px}
+  .player-controls{padding:16px 18px 20px;margin-left:-18px;margin-right:-18px}
 
-/* Tape variant */
-.leaf-pile .leaf.taped-leaf::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%) rotate(1deg);
-  width: 40px;
-  height: 12px;
-  background: rgba(220,215,200,0.7);
-  z-index: 2;
-  border-radius: 1px;
-}
-
-/* Hover: lift the leaf */
-.leaf-pile .leaf:hover {
-  z-index: 999 !important;
-  transform: translateY(-10px) rotate(0deg) !important;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-              z-index 0s step-start;
-}
-.leaf-pile .leaf:hover img {
-  box-shadow:
-    0 12px 32px rgba(0,0,0,0.22),
-    0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* Adjacent leaves get a subtle nudge */
-.leaf-pile .leaf:hover ~ .leaf {
-  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Leaf entrance animation — gentle float down */
-.leaf-pile .leaf {
-  opacity: 0;
-  transform: translateY(-40px) rotate(var(--leaf-rot, 0deg)) scale(0.85);
-  animation: leafFall 1.4s var(--ease-out-quint) forwards;
-}
-
-@keyframes leafFall {
-  0%   { opacity: 0; transform: translateY(-40px) rotate(var(--leaf-rot, 0deg)) scale(0.85); }
-  60%  { opacity: 1; transform: translateY(6px) rotate(calc(var(--leaf-rot, 0deg) * 0.6)) scale(1.02); }
-  80%  { opacity: 1; transform: translateY(-2px) rotate(calc(var(--leaf-rot, 0deg) * 1.05)) scale(0.99); }
-  100% { opacity: 1; transform: translateY(0) rotate(var(--leaf-rot, 0deg)) scale(1); }
-}
-
-/* Stagger leaf falls */
-.leaf-pile .leaf:nth-child(1)  { animation-delay: 0.02s; }
-.leaf-pile .leaf:nth-child(2)  { animation-delay: 0.06s; }
-.leaf-pile .leaf:nth-child(3)  { animation-delay: 0.10s; }
-.leaf-pile .leaf:nth-child(4)  { animation-delay: 0.14s; }
-.leaf-pile .leaf:nth-child(5)  { animation-delay: 0.18s; }
-.leaf-pile .leaf:nth-child(6)  { animation-delay: 0.22s; }
-.leaf-pile .leaf:nth-child(7)  { animation-delay: 0.26s; }
-.leaf-pile .leaf:nth-child(8)  { animation-delay: 0.30s; }
-.leaf-pile .leaf:nth-child(9)  { animation-delay: 0.34s; }
-.leaf-pile .leaf:nth-child(10) { animation-delay: 0.38s; }
-.leaf-pile .leaf:nth-child(11) { animation-delay: 0.42s; }
-.leaf-pile .leaf:nth-child(12) { animation-delay: 0.46s; }
-.leaf-pile .leaf:nth-child(13) { animation-delay: 0.50s; }
-.leaf-pile .leaf:nth-child(14) { animation-delay: 0.54s; }
-.leaf-pile .leaf:nth-child(15) { animation-delay: 0.58s; }
-.leaf-pile .leaf:nth-child(16) { animation-delay: 0.62s; }
-.leaf-pile .leaf:nth-child(17) { animation-delay: 0.66s; }
-.leaf-pile .leaf:nth-child(18) { animation-delay: 0.70s; }
-.leaf-pile .leaf:nth-child(19) { animation-delay: 0.74s; }
-.leaf-pile .leaf:nth-child(20) { animation-delay: 0.78s; }
-.leaf-pile .leaf:nth-child(21) { animation-delay: 0.82s; }
-.leaf-pile .leaf:nth-child(22) { animation-delay: 0.86s; }
-.leaf-pile .leaf:nth-child(23) { animation-delay: 0.90s; }
-.leaf-pile .leaf:nth-child(24) { animation-delay: 0.94s; }
-.leaf-pile .leaf:nth-child(25) { animation-delay: 0.98s; }
-.leaf-pile .leaf:nth-child(26) { animation-delay: 1.02s; }
-.leaf-pile .leaf:nth-child(27) { animation-delay: 1.06s; }
-.leaf-pile .leaf:nth-child(28) { animation-delay: 1.10s; }
-.leaf-pile .leaf:nth-child(29) { animation-delay: 1.14s; }
-.leaf-pile .leaf:nth-child(30) { animation-delay: 1.18s; }
-.leaf-pile .leaf:nth-child(31) { animation-delay: 1.22s; }
-.leaf-pile .leaf:nth-child(32) { animation-delay: 1.26s; }
-.leaf-pile .leaf:nth-child(33) { animation-delay: 1.30s; }
-.leaf-pile .leaf:nth-child(34) { animation-delay: 1.34s; }
-
-/* Leaf pile responsive */
-@media (max-width: 640px) {
-  .leaf-pile {
-    height: 220px;
-    max-width: 100%;
-    margin-bottom: var(--spacing-md);
+  .tracklist-sheet{
+    position:fixed;bottom:0;left:0;right:0;z-index:100;
+    background:var(--bg);border-radius:16px 16px 0 0;
+    padding:16px 20px 24px;
+    transform:translateY(100%);transition:transform 0.5s var(--ease-out);
+    max-height:65vh;overflow-y:auto;
+    border-top:1px solid var(--surface2)
   }
-}
+  .tracklist-sheet.open{transform:translateY(0)}
+  .tracklist-sheet .sheet-handle{width:32px;height:3px;border-radius:2px;background:var(--text-faint);margin:0 auto 16px;opacity:0.4}
 
-/* ============================================================
-   HERO TEXT
-   ============================================================ */
-.hero-inner {
-  max-width: 700px;
-}
-
-.hero-rule {
-  width: 1px;
-  height: 64px;
-  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
-  margin: 0 auto var(--spacing-md);
-  opacity: 0.5;
-}
-
-.hero-tag {
-  display: inline-block;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.55rem;
-  font-weight: 400;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: var(--spacing-md);
-}
-
-.hero h1 {
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: clamp(2.8rem, 6vw, 5.5rem);
-  font-weight: 300;
-  line-height: 1.08;
-  letter-spacing: 0.03em;
-  color: var(--text);
-  margin-bottom: var(--spacing-sm);
-}
-
-.hero h1 em {
-  display: block;
-  font-size: 0.42em;
-  font-weight: 300;
-  letter-spacing: 0.28em;
-  color: var(--accent);
-  font-style: normal;
-  margin-bottom: 6px;
-}
-
-.hero p {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 300;
-  letter-spacing: 0.16em;
-  color: var(--text-muted);
-  line-height: 2.2;
-}
-
-/* ============================================================
-   LAYOUT MODULES — shared
-   ============================================================ */
-.module {
-  position: relative;
-  padding: 0 var(--spacing-lg);
-  margin: 0 auto;
-  max-width: 1600px;
-}
-
-/* ============================================================
-   MODULE A — Tension Close-Up
-   Photo 40% width on left, massive whitespace right
-   ============================================================ */
-.module-a {
-  display: flex;
-  align-items: center;
-  min-height: 100vh;
-  padding-top: var(--spacing-xl);
-  padding-bottom: var(--spacing-xl);
-  gap: 0;
-}
-
-.module-a .a-visual {
-  flex: 0 0 40%;
-  position: relative;
-}
-
-.module-a .a-visual img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: contain;
-}
-
-.module-a .a-copy {
-  flex: 0 0 60%;
-  padding-left: clamp(60px, 10vw, 140px);
-}
-
-.module-a .a-label {
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: var(--spacing-sm);
-}
-
-.module-a .a-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2rem, 3.5vw, 3.2rem);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.25;
-  margin-bottom: var(--spacing-sm);
-  color: var(--text);
-}
-
-.module-a .a-note {
-  font-size: 0.7rem;
-  font-weight: 300;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  max-width: 320px;
-  line-height: 1.8;
-}
-
-/* Reverse: photo on right */
-.module-a.reverse {
-  flex-direction: row-reverse;
-}
-.module-a.reverse .a-copy {
-  padding-left: 0;
-  padding-right: clamp(60px, 10vw, 140px);
-}
-
-/* ============================================================
-   MODULE B — Breathing Landscape
-   Centered horizontal photo, huge vertical whitespace
-   ============================================================ */
-.module-b {
-  text-align: center;
-  padding-top: var(--spacing-2xl);
-  padding-bottom: var(--spacing-2xl);
-}
-
-.module-b .b-frame {
-  display: inline-block;
-  max-width: 65%;
-  position: relative;
-}
-
-.module-b .b-frame img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.module-b .b-caption {
-  margin-top: var(--spacing-sm);
-  font-size: 0.62rem;
-  font-weight: 300;
-  letter-spacing: 0.22em;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-/* ============================================================
-   MODULE C — Diagonal Duo
-   Top-left medium + bottom-right small
-   ============================================================ */
-.module-c {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: var(--spacing-lg);
-  align-items: start;
-  padding-top: var(--spacing-xl);
-  padding-bottom: var(--spacing-xl);
-  min-height: 100vh;
-}
-
-.module-c .c-main {
-  grid-column: 1;
-  grid-row: 1 / 3;
-  align-self: center;
-}
-
-.module-c .c-main img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.module-c .c-sub {
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: end;
-  max-width: 70%;
-}
-
-.module-c .c-sub img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.module-c .c-caption {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  align-self: end;
-  text-align: right;
-  max-width: 260px;
-  padding-bottom: var(--spacing-sm);
-}
-
-.module-c .c-label {
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: var(--spacing-xs);
-}
-
-.module-c .c-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.3;
-  color: var(--text);
-}
-
-/* Reverse diagonal */
-.module-c.reverse .c-main {
-  grid-column: 2;
-}
-.module-c.reverse .c-sub {
-  grid-column: 1;
-  justify-self: start;
-}
-.module-c.reverse .c-caption {
-  grid-column: 1;
-  justify-self: start;
-  text-align: left;
-}
-
-/* ============================================================
-   MODULE D — Full Bleed
-   100% width, no border, chapter transition
-   ============================================================ */
-.module-d {
-  padding: 0;
-  margin: var(--spacing-2xl) 0;
-}
-
-.module-d img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.module-d .d-overlay {
-  position: absolute;
-  bottom: var(--spacing-lg);
-  left: var(--spacing-lg);
-  color: #fff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  z-index: 2;
-}
-
-.module-d .d-overlay .d-chapter {
-  font-size: 0.55rem;
-  font-weight: 400;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-
-.module-d .d-overlay .d-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  font-weight: 300;
-  font-style: italic;
-}
-
-/* ============================================================
-   MODULE E — Column with copy
-   Narrow centered photo with editorial text beside
-   ============================================================ */
-.module-e {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(40px, 8vw, 100px);
-  padding-top: var(--spacing-xl);
-  padding-bottom: var(--spacing-xl);
-  min-height: 80vh;
-}
-
-.module-e .e-photo {
-  flex: 0 0 45%;
-}
-
-.module-e .e-photo img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.module-e .e-text {
-  flex: 0 0 35%;
-}
-
-.module-e .e-index {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 4rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--accent);
-  line-height: 1;
-  opacity: 0.5;
-  margin-bottom: var(--spacing-xs);
-}
-
-.module-e .e-label {
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: var(--spacing-sm);
-}
-
-.module-e .e-quote {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--text);
-}
-
-/* ============================================================
-   GALLERY SECTION DIVIDER
-   ============================================================ */
-.divider {
-  text-align: center;
-  padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl);
-}
-
-.divider-inner {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.divider-rule {
-  width: 1px;
-  height: 48px;
-  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
-  opacity: 0.35;
-}
-
-.divider-label {
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.divider-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  font-weight: 300;
-  font-style: italic;
-  color: var(--text);
-}
-
-/* ============================================================
-   FOOTER
-   ============================================================ */
-.footer {
-  text-align: center;
-  padding: var(--spacing-2xl) var(--spacing-lg);
-  color: var(--text-faint);
-  font-size: 0.6rem;
-  font-weight: 300;
-  letter-spacing: 0.22em;
-}
-
-.footer-rule {
-  width: 1px;
-  height: 40px;
-  background: linear-gradient(to bottom, transparent, var(--text-faint), transparent);
-  margin: 0 auto var(--spacing-md);
-  opacity: 0.25;
-}
-
-/* ============================================================
-   REVEAL ANIMATION (Intersection Observer driven)
-   ============================================================ */
-.reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  will-change: transform, opacity;
-}
-
-.reveal.is-visible {
-  animation: revealUp 1.2s var(--ease-out-quint) forwards;
-}
-
-@keyframes revealUp {
-  0%   { opacity: 0; transform: translateY(30px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Staggered delays for children inside a revealed container */
-.reveal-stagger > .reveal:nth-child(1) { animation-delay: 0s; }
-.reveal-stagger > .reveal:nth-child(2) { animation-delay: 0.15s; }
-.reveal-stagger > .reveal:nth-child(3) { animation-delay: 0.3s; }
-.reveal-stagger > .reveal:nth-child(4) { animation-delay: 0.45s; }
-
-/* For modules that should reveal as a whole */
-.module.reveal.is-visible > * {
-  animation: revealUp 1.2s var(--ease-out-quint) forwards;
-}
-.module.reveal.is-visible > *:nth-child(1) { animation-delay: 0s; }
-.module.reveal.is-visible > *:nth-child(2) { animation-delay: 0.12s; }
-.module.reveal.is-visible > *:nth-child(3) { animation-delay: 0.24s; }
-.module.reveal.is-visible > *:nth-child(4) { animation-delay: 0.36s; }
-
-.module.reveal > * {
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-/* ============================================================
-   PHOTO HOVER
-   ============================================================ */
-img.photo {
-  display: block;
-  transition: filter 0.5s ease, opacity 1.2s var(--ease-out-quint);
-  cursor: default;
-}
-
-.photo-wrapper {
-  position: relative;
-  display: block;
-  overflow: hidden;
-}
-
-.photo-wrapper:hover img.photo {
-  filter: brightness(0.92);
-}
-
-.photo-wrapper:hover {
-  cursor: crosshair;
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width: 1024px) {
-  :root {
-    --spacing-lg: 48px;
-    --spacing-xl: 80px;
-    --spacing-2xl: 120px;
+  .mobile-player{
+    display:flex!important;position:fixed;bottom:0;left:0;right:0;z-index:99;
+    background:rgba(10,10,12,0.95);backdrop-filter:blur(20px);
+    padding:10px 16px;align-items:center;gap:12px;
+    border-top:1px solid var(--surface2)
   }
-  .module { padding: 0 var(--spacing-md); }
-  .module-a { flex-direction: column; min-height: auto; gap: var(--spacing-md); }
-  .module-a .a-visual { flex: 0 0 auto; width: 70%; }
-  .module-a .a-copy { flex: 0 0 auto; padding-left: 0; padding-right: 0; width: 70%; }
-  .module-a.reverse { flex-direction: column; }
-  .module-b .b-frame { max-width: 85%; }
-  .module-c { grid-template-columns: 1fr; gap: var(--spacing-md); min-height: auto; }
-  .module-c .c-main { grid-column: 1; grid-row: 1; }
-  .module-c .c-caption { grid-column: 1; grid-row: 2; text-align: left; justify-self: start; }
-  .module-c .c-sub { grid-column: 1; grid-row: 3; max-width: 60%; justify-self: start; }
-  .module-c.reverse .c-main { grid-column: 1; grid-row: 1; }
-  .module-c.reverse .c-caption { grid-column: 1; grid-row: 2; text-align: left; justify-self: start; }
-  .module-c.reverse .c-sub { grid-column: 1; grid-row: 3; max-width: 60%; justify-self: start; }
-  .module-d .d-overlay { bottom: var(--spacing-md); left: var(--spacing-md); }
-  .module-e { flex-direction: column; gap: var(--spacing-md); min-height: auto; }
-  .module-e .e-photo { flex: 0 0 auto; width: 80%; }
-  .module-e .e-text { flex: 0 0 auto; width: 80%; }
+  .mobile-player .mp-info{flex:1;min-width:0}
+  .mobile-player .mp-name{font-size:.55rem;font-weight:300;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mobile-player .mp-chapter{font-size:.45rem;font-weight:200;color:var(--text-faint)}
+  .sheet-btn{
+    display:flex!important;width:100%;padding:8px 0;border:none;background:none;
+    color:var(--accent-dim);font-size:.55rem;letter-spacing:.12em;cursor:pointer;
+    align-items:center;justify-content:center;gap:6px;font-family:'Inter',sans-serif
+  }
+  .pc-only{display:none!important}
+}
+@media(min-width:769px){
+  .mobile-only{display:none!important}
+}
+@media(max-width:480px){
+  .photo-zone{flex:0 0 55%}
+  .panel-zone{padding:14px}
+  .album-header h1{font-size:.95rem}
 }
 
-@media (max-width: 640px) {
-  :root {
-    --spacing-md: 32px;
-    --spacing-lg: 40px;
-    --spacing-xl: 64px;
-    --spacing-2xl: 80px;
-  }
-  .module { padding: 0 var(--spacing-sm); }
-  .module-a .a-visual, .module-a .a-copy { width: 90%; }
-  .module-b .b-frame { max-width: 95%; }
-  .module-c .c-sub { max-width: 80%; }
-  .module-e .e-photo, .module-e .e-text { width: 90%; }
-  .hero h1 { font-size: clamp(2rem, 8vw, 3rem); }
-}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     HERO
-     ============================================================ -->
-<section class="hero" id="hero">
-  <!-- Leaf Pile — scattered thumbnail collage -->
-  <div class="leaf-pile" id="leafPile" aria-label="Photo thumbnails collage"></div>
+<div class="ambient" id="ambient"><div class="ambient-bg" id="ambientBg"></div><div class="ambient-overlay"></div></div>
+<div class="noise"></div>
 
-  <div class="hero-inner reveal-stagger">
-    <div class="hero-rule reveal"></div>
-    <div class="hero-tag reveal">Editorial Portfolio</div>
-    <h1 class="reveal"><em>Jang</em>Wonyoung</h1>
-    <p class="reveal">
-      A study in light, form, and grace.<br>
-      Thirty-four frames — each a singular moment.
-    </p>
+<div class="app">
+  <div class="photo-zone">
+    <div class="viewer" id="viewer">
+      <div class="photo-frame A" id="frameA"><img id="imgA" alt=""></div>
+      <div class="photo-frame B" id="frameB"><img id="imgB" alt=""></div>
+    </div>
   </div>
-</section>
 
-<!-- All photo modules are generated by JS below -->
+  <div class="panel-zone">
+    <div class="panel-scroll">
+      <div class="album-header">
+        <div class="ep-label">Silent Visual EP</div>
+        <h1>VISUAL EP:<br>WONYOUNG</h1>
+        <div class="divider"></div>
+      </div>
 
-<!-- ============================================================
-     FOOTER
-     ============================================================ -->
-<footer class="footer reveal">
-  <div class="footer-rule"></div>
-  JANG WONYOUNG &copy; 2026<br>
-  Editorial Photography Portfolio
-</footer>
+      <div class="tracklist pc-only" id="tracklistPC"></div>
+
+      <button class="sheet-btn mobile-only" id="sheetToggle">☰ VIEW TRACKLIST</button>
+    </div>
+
+    <div class="player-controls pc-only">
+      <div class="controls-row">
+        <button class="btn-prev" id="pcPrev">◀</button>
+        <button class="btn-play" id="pcPlay">▶</button>
+        <button class="btn-next" id="pcNext">▶▶</button>
+        <div class="track-info"><div class="ti-name" id="tiName">Take 01</div><div class="ti-chapter" id="tiChapter">Chapter I</div></div>
+      </div>
+      <div class="progress-wrap" id="pcProgress"><div class="progress-bar" id="pcBar"></div></div>
+    </div>
+  </div> <!-- close panel-zone -->
+</div> <!-- close app -->
+
+<div class="tracklist-sheet mobile-only" id="tracklistSheet">
+  <div class="sheet-handle"></div>
+  <div class="tracklist" id="tracklistMobile"></div>
+</div>
+
+<div class="mobile-player mobile-only">
+  <button class="btn-prev" id="mPrev">◀</button>
+  <button class="btn-play" id="mPlay">▶</button>
+  <button class="btn-next" id="mNext">▶▶</button>
+  <div class="mp-info"><div class="mp-name" id="mpName">Take 01</div><div class="mp-chapter" id="mpChapter">Chapter I</div></div>
+  <div class="progress-wrap" style="position:absolute;bottom:0;left:0;right:0;height:2px;border-radius:0"><div class="progress-bar" id="mBar"></div></div>
+</div>
 
 <script>
-// ============================================================
-// PHOTO DATA
-// ============================================================
-const PHOTO_DIR = 'wy_pic/';
-const photoFiles = [
+// ===== DATA =====
+const DIR='wy_pic/';
+const FILES=[
   'IMG_3971.jpeg','IMG_4083.jpeg','IMG_4085.jpeg','IMG_4086.jpeg',
   'IMG_4087.jpeg','IMG_4088.jpeg','IMG_4089.jpeg','IMG_4090.jpeg',
   'IMG_4091.jpeg','IMG_4092.jpeg','IMG_4093.jpeg','IMG_4094.jpeg',
@@ -769,524 +214,246 @@ const photoFiles = [
   'IMG_4112.jpeg','IMG_4113.jpeg','IMG_4114.jpeg','IMG_4115.jpeg',
   'IMG_4116.jpeg','IMG_4117.jpeg'
 ];
+const LABELS=[
+  'Portrait','Study in Light','Moment Captured','Editorial',
+  'Close-Up','In Frame','Still Life','Vérité',
+  'The Gaze','Silhouette','Radiance','Poise',
+  'Presence','Quiet Drama','Aperture','Grace Note',
+  'Composition','The Look','Lumière','Character Study',
+  'Soft Power','Quiet Confidence','Golden Hour','The Muse',
+  'From Stage','Center Frame','Spotlight','Encore',
+  'Curtain Call','Afterglow','Reborn','Icon','Legacy','Final Bow'
+];
+const CHAPTERS=[
+  {id:'I',title:'The Shadows',sub:'暗调 · 沉思 · 轮廓',s:0,e:7},
+  {id:'II',title:'The Candid',sub:'随性 · 记录 · 松弛感',s:8,e:16},
+  {id:'III',title:'The Gaze',sub:'特写 · 张力 · 绝对聚焦',s:17,e:25},
+  {id:'IV',title:'The Stage',sub:'高光 · 舞台 · 纯粹',s:26,e:33},
+];
 
-// ============================================================
-// SHUFFLE (seeded for reproducibility)
-// ============================================================
-let seed = 137;
-function seededRandom() {
-  seed = (seed * 16807) % 2147483647;
-  return (seed - 1) / 2147483646;
+function getChapter(i){return CHAPTERS.find(c=>i>=c.s&&i<=c.e)||CHAPTERS[0]}
+
+// ===== STATE =====
+let idx=0,playing=false,prog=0,intv=null,transTimer=null;
+const CYCLE=6000,TICK=100;
+
+// ===== DOM HELPERS =====
+function $(id){return document.getElementById(id)}
+function setText(id,val){const e=$(id);if(e)e.textContent=val}
+function getFrame(label){
+  const el=$(label);
+  return {frame:el, img:el.querySelector('img')};
 }
-const shuffled = photoFiles.map((f, i) => ({ file: f, idx: i, r: seededRandom() }));
-shuffled.sort((a, b) => a.r - b.r);
 
-// ============================================================
-// BUILD LEAF PILE — Scattered thumbnail collage
-// ============================================================
-(function buildLeafPile() {
-  const pile = document.getElementById('leafPile');
-  const leafCount = photoFiles.length; // 34
-  const pileW = pile.clientWidth;
-  const pileH = pile.clientHeight;
+// Frame convention: we use CSS class 'A' to mark the currently-showing frame.
+// The other frame is always 'B' (the hidden/buffer frame).
+// After a transition, we swap: old-A → done-clean, old-B → new-A.
+function currentPair(){
+  const a=$('frameA'),b=$('frameB');
+  if(a.classList.contains('A')) return {cur:$('frameA'),nxt:$('frameB'),ci:a.querySelector('img'),ni:b.querySelector('img')};
+  return {cur:$('frameB'),nxt:$('frameA'),ci:b.querySelector('img'),ni:a.querySelector('img')};
+}
 
-  // Use a separate seed so leaf pile is deterministic but distinct from layout shuffle
-  let ls = 271;
-  function lr() { ls = (ls * 16807) % 2147483647; return (ls - 1) / 2147483646; }
+const cache={};
+function preloadNext(i){
+  const nxt=(i+1)%34,s=DIR+FILES[nxt];
+  if(!cache[s]){cache[s]=new Image();cache[s].src=s}
+}
 
-  // Define an organic cluster center and radius
-  const cx = pileW * 0.5;
-  const cy = pileH * 0.48;
-  const rx = pileW * 0.44;
-  const ry = pileH * 0.38;
-
-  // Leaf sizes — small thumbnails like scattered prints
-  const leafSizes = [
-    { w: 95, h: 130 }, { w: 80, h: 110 }, { w: 105, h: 80 },
-    { w: 90, h: 125 }, { w: 110, h: 85 }, { w: 85, h: 115 },
-    { w: 100, h: 100 }, { w: 75, h: 105 }, { w: 95, h: 75 },
-    { w: 88, h: 120 }, { w: 108, h: 90 }, { w: 82, h: 108 },
-  ];
-
-  // Generate positions using a spiral scatter with jitter
-  const positions = [];
-  for (let i = 0; i < leafCount; i++) {
-    // Golden-angle spiral to distribute evenly within the ellipse
-    const angle = i * 2.399963; // golden angle in radians
-    const r = Math.sqrt((i + 0.5) / leafCount); // sqrt for uniform disc distribution
-    const x = cx + Math.cos(angle) * r * rx;
-    const y = cy + Math.sin(angle) * r * ry;
-
-    // Add organic jitter
-    const jx = (lr() - 0.5) * 50;
-    const jy = (lr() - 0.5) * 40;
-    // Some leaves pushed further out to the edges
-    const edgePush = i < 8 ? (1 - r) * (lr() * 80 + 40) : 0;
-
-    const size = leafSizes[Math.floor(lr() * leafSizes.length)];
-
-    positions.push({
-      x: x + jx + (lr() - 0.5) * edgePush * 0.3,
-      y: y + jy + (lr() - 0.5) * edgePush * 0.3,
-      w: size.w,
-      h: size.h,
-      rotation: (lr() - 0.5) * 50, // -25deg to +25deg — varied scatter
-      z: Math.floor(lr() * 30), // z-index stacking
-      isPolaroid: lr() < 0.22,
-      isTaped: lr() < 0.32,
-      file: photoFiles[i],
-    });
-  }
-
-  // Sort by z-index for proper stacking (back to front)
-  positions.sort((a, b) => a.z - b.z);
-
-  // Create DOM elements
-  positions.forEach((pos, i) => {
-    const leaf = document.createElement('div');
-    leaf.className = 'leaf';
-    if (pos.isPolaroid) leaf.classList.add('polaroid-leaf');
-    if (pos.isTaped) leaf.classList.add('taped-leaf');
-
-    // Position — center the leaf on its x,y
-    const left = pos.x - pos.w / 2;
-    const top = pos.y - pos.h / 2;
-
-    leaf.style.cssText = `
-      left: ${left.toFixed(0)}px;
-      top: ${top.toFixed(0)}px;
-      width: ${pos.w}px;
-      height: ${pos.isPolaroid ? pos.h + 18 : pos.h}px;
-      --leaf-rot: ${pos.rotation.toFixed(1)}deg;
-      transform: rotate(${pos.rotation.toFixed(1)}deg);
-      z-index: ${pos.z};
-    `;
-
-    const img = document.createElement('img');
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.alt = 'Thumbnail ' + (i + 1);
-    // Use generated thumbnails (200px, ~6-10KB each vs 1-5MB originals)
-    img.dataset.src = 'wy_pic/thumbs/' + pos.file.replace(/\.jpe?g$/i, '.jpg');
-    if (pos.isPolaroid) {
-      img.style.height = pos.h + 'px';
+// ===== BUILD TRACKLIST =====
+function buildTracklist(container){
+  container.innerHTML='';
+  CHAPTERS.forEach(ch=>{
+    const g=document.createElement('div');g.className='chapter-group';
+    g.innerHTML=`<div class="chapter-header"><span class="ch-num">${ch.id}</span><span class="ch-title">${ch.title}</span><span class="ch-sub">${ch.sub}</span><span class="ch-line"></span></div>`;
+    for(let i=ch.s;i<=ch.e;i++){
+      const t=document.createElement('div');t.className='track';t.dataset.idx=i;
+      t.innerHTML=`<span class="t-num">${String(i+1).padStart(2,'0')}</span><span class="t-label">${LABELS[i]}</span><span class="t-duration">${ch.id}</span>`;
+      t.addEventListener('click',()=>go(i));
+      g.appendChild(t);
     }
-
-    leaf.appendChild(img);
-
-    // Click to scroll to the corresponding module
-    leaf.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Match by index in shuffled array
-      const targetIdx = i;
-      const targetFile = photoFiles[targetIdx];
-      const modules = document.querySelectorAll('.module, .module-d');
-      for (const mod of modules) {
-        const imgs = mod.querySelectorAll('img[data-src], img[src]');
-        for (const mi of imgs) {
-          const src = mi.src || mi.dataset.src || '';
-          if (src.includes(targetFile)) {
-            mod.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Flash highlight
-            mod.style.transition = 'box-shadow 0.3s ease';
-            mod.style.boxShadow = '0 0 0 4px rgba(184,151,110,0.3)';
-            setTimeout(() => {
-              mod.style.boxShadow = '';
-              setTimeout(() => { mod.style.transition = ''; }, 300);
-            }, 800);
-            return;
-          }
-        }
-      }
-    });
-
-    pile.appendChild(leaf);
+    container.appendChild(g);
   });
+}
+buildTracklist($('tracklistPC'));
+buildTracklist($('tracklistMobile'));
 
-  // Lazy-load leaf images via IntersectionObserver
-  // (short delay — the leaf pile is above the fold, so they load quickly)
-  const leafObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const imgs = entry.target.querySelectorAll('img[data-src]');
-        imgs.forEach(img => {
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-        });
-        leafObserver.unobserve(entry.target);
-      }
-    });
-  }, { rootMargin: '200px' });
-
-  leafObserver.observe(pile);
-})();
-
-// ============================================================
-// MODULE TEMPLATES
-// ============================================================
-const editorialLabels = [
-  'Portrait', 'Study in Light', 'Moment Captured', 'Editorial',
-  'Close-Up', 'In Frame', 'Still Life', 'Vérité',
-  'The Gaze', 'Silhouette', 'Radiance', 'Poise',
-  'Presence', 'Quiet Drama', 'Aperture', 'Grace Note',
-  'Composition', 'The Look', 'Lumière', 'Character Study'
-];
-
-// Wonyoung-specific editorial titles — each module gets a unique, fitting line
-const wonyoungTitles = [
-  'Born to shine,<br>built to inspire',
-  'A gaze that holds<br>a thousand stories',
-  'Effortless elegance<br>in every frame',
-  'The world through<br>her eyes',
-  'Soft power,<br>quiet confidence',
-  'Where youth meets<br>timeless grace',
-  'A flower in full bloom,<br>unfolding endlessly',
-  'The calm before<br>the spotlight',
-  'Every glance<br>a masterpiece',
-  'Silk and steel —<br>the modern muse',
-  'Posing like the world<br>is her runway',
-  'The art of being<br>simply herself',
-  'A whisper of charm,<br>a roar of presence',
-  'Golden hour follows<br>wherever she goes',
-  'More than a portrait —<br>a feeling',
-  'Turning heads,<br>turning pages',
-  'When the lens loves<br>what it sees',
-  'Precision in poise,<br>poetry in motion',
-  'The quiet brilliance<br>of a star',
-  'Radiant from every angle,<br>without exception',
-  'A dream in soft focus,<br>a reality in sharp detail',
-  'Between innocence<br>and allure',
-  'An icon in the making —<br>already complete',
-  'Grace that needs<br>no introduction',
-  'Not just seen,<br>but remembered',
-  'Light bends softly<br>around her silhouette',
-  'A portrait worth<br>a thousand replays',
-  'The camera blushes —<br>she does not',
-  'One look is all it takes<br>to understand',
-  'Effortlessly iconic,<br>unapologetically herself',
-  'Defining beauty<br>on her own terms',
-  'A study in contrast —<br>bold yet delicate',
-  'The kind of beauty<br>that lingers in memory',
-  'Capturing the intangible —<br>presence itself'
-];
-
-const wonyoungCaptions = [
-  'From center stage to candid moments, every expression reveals another layer of her artistry.',
-  'With a single glance, she transforms the ordinary into something worthy of a magazine cover.',
-  'Youth and sophistication rarely coexist so naturally — here they blend into something rare.',
-  'The space around her isn\'t empty; it\'s charged with the anticipation only true stardom brings.',
-  'Delicate features framed by an even stronger spirit — this is the duality that captivates millions.',
-  'In a world of passing trends, her radiance remains constant, steady, and unmistakable.',
-  'A rising star of the fourth generation, redefining what it means to be an idol with each appearance.',
-  'Beyond the stage lights and center positions lies a quiet elegance that photographs can only hint at.',
-  'She commands the frame without demanding attention — the most powerful kind of presence.',
-  'From rehearsal rooms to red carpets, the same grace follows her wherever she steps.',
-  'There is an art to making complexity look effortless, and she has mastered it completely.',
-  'A gaze that connects across the distance between stage and audience, intimate and electric.',
-  'The camera doesn\'t capture her — it witnesses her. There\'s a difference.',
-  'Each photograph is a collaboration between light, lens, and a subject who needs no direction.',
-  'Beneath the glamour is discipline; beneath the smile is strength. This is the real Wonyoung.',
-  'She doesn\'t just wear the spotlight — she wears it like a second skin, natural and luminous.',
-  'There\'s a reason the frame gravitates toward her: some people are simply magnetic.',
-  'The elegance of a classical painting meets the energy of a new generation.',
-  'What the camera captures is only half the story — the rest lives in the feeling afterward.',
-  'Every pose tells a different chapter of the same truth: she was born for this.',
-  'The kind of beauty that doesn\'t shout, yet fills every corner of the room.',
-  'Between takes, between stages, between moments — still captivating. Always.',
-  'A visual language all her own, spoken fluently from the very first frame.',
-  'The fourth wall dissolves when she looks into the lens. You\'re not watching — you\'re part of it.',
-  'Some images fade with time; these only grow more significant, more resonant.',
-  'She moves through the world like a melody — unforgettable, undeniable, impossible to ignore.',
-  'The wardrobe changes, the set transforms, but the essence remains unmistakably her.',
-  'When the music stops and the lights dim, what remains is the raw presence of someone extraordinary.',
-  'A career of milestones captured in single frames, each one a marker on an extraordinary journey.',
-  'Natural beauty amplified by years of dedication — this is what excellence looks like up close.',
-  'The secret isn\'t just how she looks at the camera, but how the camera looks at her.',
-  'You can photograph a thousand faces, but you won\'t find another quite like this.',
-  'In the quiet between poses, when the mask drops, something even more beautiful emerges.',
-  'She arrived like a promise and stayed like a legacy — this is only the beginning.'
-];
-
-const wonyoungQuotes = [
-  'I want to be someone who inspires others just by being myself.',
-  'The stage is where I feel most alive. It\'s where I belong.',
-  'Every day is a new opportunity to grow and become a better version of myself.',
-  'I believe that confidence comes from within — not from what others say about you.',
-  'Hard work always pays off, even if you can\'t see it right away.',
-  'My dream is to make people smile through everything I do.',
-  'Being on stage is a gift I will never take for granted.',
-  'There is beauty in being different, in having your own unique color.',
-  'I want to be remembered as someone who gave her all in every moment.',
-  'The support of my fans is what keeps me going through the hardest days.',
-  'I\'m still learning and growing. There is so much more I want to show.',
-  'If I can touch even one person\'s heart, then everything is worth it.',
-  'Stay true to yourself — that\'s the most important thing I\'ve learned.',
-  'I don\'t want to be perfect. I want to be real, honest, and sincere.',
-  'Every performance is a chance to connect with someone watching.',
-  'The journey matters more than the destination. Enjoy every step.',
-  'I hope to be a light in someone\'s life, even on their darkest days.',
-  'Dreams don\'t come true overnight. They are built one day at a time.',
-  'I believe in the power of positivity — it changes everything.',
-  'Never forget the people who helped you get to where you are today.',
-  'The best is yet to come. I truly believe that with all my heart.',
-  'I want to keep challenging myself and never settle for where I am.',
-  'Being an idol isn\'t just a job — it\'s a promise to those who believe in you.',
-  'I want my legacy to be one of kindness, hard work, and sincerity.',
-  'When I look at my fans, I see the reason I do what I do.',
-  'There is nothing more rewarding than seeing someone smile because of you.',
-  'I try to live each day with gratitude, knowing how precious every moment is.',
-  'The spotlight is bright, but what keeps me grounded are the people who support me.',
-  'I want to be someone who makes this world just a little bit brighter.',
-  'Every challenge I face is just another step toward the person I want to become.',
-  'I believe that beauty radiates from within — from a kind heart and a strong spirit.',
-  'There is magic in the small moments we often overlook. I try to cherish them all.',
-  'My story is still being written, and I\'m excited for every chapter ahead.',
-  'To everyone who believes in me: thank you. I will continue to work hard for you.'
-];
-
-function pick(arr, i) { return arr[i % arr.length]; }
-
-// ============================================================
-// BUILD MODULE HTML
-// ============================================================
-function buildModuleA(file, idx, reverse) {
-  const label = pick(editorialLabels, idx);
-  const title = wonyoungTitles[idx % wonyoungTitles.length];
-  const caption = wonyoungCaptions[idx % wonyoungCaptions.length];
-  const cls = reverse ? 'module module-a reverse reveal' : 'module module-a reveal';
-  return `
-    <section class="${cls}">
-      <div class="a-visual">
-        <div class="photo-wrapper">
-          <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
-        </div>
-      </div>
-      <div class="a-copy">
-        <div class="a-label">${label} &mdash; No. ${String(idx+1).padStart(2,'0')}</div>
-        <div class="a-title">${title}</div>
-        <div class="a-note">${caption}</div>
-      </div>
-    </section>`;
+// ===== UPDATE UI =====
+function updateUI(i){
+  const ch=getChapter(i);
+  const label=`Take ${String(i+1).padStart(2,'0')} — ${LABELS[i]}`;
+  setText('tiName',label);setText('tiChapter',`Chapter ${ch.id}: ${ch.title}`);
+  setText('mpName',label);setText('mpChapter',`Chapter ${ch.id}: ${ch.title}`);
+  document.querySelectorAll('.track').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.idx)===i));
+  document.querySelectorAll(`.track[data-idx="${i}"]`).forEach(t=>t.scrollIntoView({block:'nearest',behavior:'smooth'}));
 }
 
-function buildModuleB(file, idx) {
-  const title = wonyoungTitles[idx % wonyoungTitles.length];
-  return `
-    <section class="module module-b reveal">
-      <div class="b-frame">
-        <div class="photo-wrapper">
-          <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
-        </div>
-        <div class="b-caption">${pick(editorialLabels, idx)} &mdash; No. ${String(idx+1).padStart(2,'0')} &mdash; ${title.replace(/<br>/g, ' / ')}</div>
-      </div>
-    </section>`;
+// ===== CORE: GO TO INDEX =====
+function go(i){
+  if(i<0||i>33)return;
+
+  // If already showing this index, just reset progress
+  if(i===idx){resetProg();return;}
+
+  // Cancel any in-flight transition timer
+  if(transTimer){clearTimeout(transTimer);transTimer=null;}
+
+  // Pause the progress interval during the transition to prevent
+  // the interval from firing multiple go() calls while cross-fading.
+  // We record the playing state and temporarily suppress ticks.
+  const wasPlaying = playing;
+  if(wasPlaying) stopProg();
+
+  idx=i;
+  const src=DIR+FILES[i];
+  updateUI(i);
+
+  // Get current state from DOM (authoritative, not cached in variables)
+  let {cur, nxt, ci, ni} = currentPair();
+
+  // Ensure target image is loaded (or loading)
+  if(!cache[src]){cache[src]=new Image();cache[src].src=src}
+
+  // Put target on the hidden frame — always create a fresh <img>
+  const fresh = document.createElement('img');
+  fresh.src = src;
+  fresh.alt = '';
+  fresh.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;will-change:transform,opacity';
+  ni.replaceWith(fresh);
+
+  // Start cross-fade
+  cur.classList.add('fade-out');
+  nxt.classList.add('fade-in','active');
+
+  // After transition: swap roles and cleanup
+  transTimer = setTimeout(()=>{
+    transTimer=null;
+
+    // Clean old frame — clear img src and reset classes
+    cur.querySelector('img').src = '';
+    cur.className = 'photo-frame B done';
+    const dead = cur.querySelector('img');
+    const empty = document.createElement('img');
+    empty.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;will-change:transform,opacity';
+    dead.replaceWith(empty);
+
+    // Promote next to current
+    nxt.className = 'photo-frame A';
+    if(wasPlaying) nxt.classList.remove('paused');
+    else nxt.classList.add('paused');
+
+    // Update ambient
+    $('ambientBg').style.backgroundImage=`url('${src}')`;
+
+    resetProg();
+    preloadNext(i);
+
+    // Resume the interval if was playing
+    if(wasPlaying) startProg();
+  }, 850);
 }
 
-function buildModuleC(fileMain, fileSub, idx, reverse) {
-  const label = pick(editorialLabels, idx);
-  const title = wonyoungTitles[idx % wonyoungTitles.length];
-  const cls = reverse ? 'module module-c reverse reveal' : 'module module-c reveal';
-  return `
-    <section class="${cls}">
-      <div class="c-caption">
-        <div class="c-label">${label} &mdash; Diptych No. ${String(idx+1).padStart(2,'0')}</div>
-        <div class="c-title">${title}</div>
-      </div>
-      <div class="c-main">
-        <div class="photo-wrapper">
-          <img class="photo" data-src="${PHOTO_DIR}${fileMain}" alt="Wonyoung ${idx+1}a" loading="lazy">
-        </div>
-      </div>
-      <div class="c-sub">
-        <div class="photo-wrapper">
-          <img class="photo" data-src="${PHOTO_DIR}${fileSub}" alt="Wonyoung ${idx+1}b" loading="lazy">
-        </div>
-      </div>
-    </section>`;
+// ===== Force-reset Ken Burns on current frame =====
+function resetKenBurns(){
+  const {cur, ci} = currentPair();
+  if(!cur)return;
+  const src = ci.src;
+  const fresh = document.createElement('img');
+  fresh.src = src;
+  fresh.alt = '';
+  fresh.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;will-change:transform,opacity';
+  ci.replaceWith(fresh);
+  cur.classList.remove('paused');
 }
 
-function buildModuleD(file, idx) {
-  return `
-    <section class="module-d reveal" style="position:relative;">
-      <div class="photo-wrapper" style="position:relative;">
-        <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
-        <div class="d-overlay">
-          <div class="d-chapter">Chapter ${Math.ceil((idx+1)/8)}</div>
-          <div class="d-title">${pick(editorialLabels, idx)}</div>
-        </div>
-      </div>
-    </section>`;
+// ===== PROGRESS =====
+function resetProg(){
+  prog=0;
+  document.querySelectorAll('.progress-bar').forEach(b=>b.style.width='0%');
 }
 
-function buildModuleE(file, idx, reverse) {
-  const quote = wonyoungQuotes[idx % wonyoungQuotes.length];
-  const cls = reverse ? 'module module-e reveal' : 'module module-e reveal';
-  return `
-    <section class="${cls}">
-      <div class="e-photo">
-        <div class="photo-wrapper">
-          <img class="photo" data-src="${PHOTO_DIR}${file}" alt="Wonyoung ${idx+1}" loading="lazy">
-        </div>
-      </div>
-      <div class="e-text">
-        <div class="e-index">${String(idx+1).padStart(2,'0')}</div>
-        <div class="e-label">${pick(editorialLabels, idx)}</div>
-        <div class="e-quote">&ldquo;${quote}&rdquo;</div>
-      </div>
-    </section>`;
+function startProg(){
+  stopProg();prog=0;
+  resetProg();
+  intv=setInterval(()=>{
+    if(!playing)return;
+    prog+=(TICK/CYCLE)*100;
+    if(prog>=100){prog=100;
+      document.querySelectorAll('.progress-bar').forEach(b=>b.style.width='100%');
+      go(idx+1);
+      return;
+    }
+    document.querySelectorAll('.progress-bar').forEach(b=>b.style.width=prog+'%');
+    if(prog>=40)preloadNext(idx);
+  },TICK);
 }
 
-// ============================================================
-// DEFINE THE LAYOUT SEQUENCE
-// ============================================================
-// We have 34 photos. Module A/B/D/E each use 1 photo, Module C uses 2.
-// The layout MUST consume exactly 34 photos.
-//
-// Sequence: B-A-C-D-E-A-C-B-D-E-A-C-[divider]-B-C-D-E-A-C-B-D-E-A-C-B
-// Photo count: 1+1+2+1+1+1+2+1+1+1+1+2 + 1+2+1+1+1+2+1+1+1+1+2+1 = 34 ✓
+function stopProg(){if(intv){clearInterval(intv);intv=null}}
 
-const layoutPlan = [];
-let pi = 0;
-
-function next() {
-  const item = shuffled[pi++];
-  return { file: item.file, idx: item.idx };
-}
-
-function plan(type, config = {}) {
-  layoutPlan.push({ type, ...config });
-}
-
-// Layout: 34 photos → B-A-C-D-E-A-C-B-D-E-A-C-[divider]-B-C-D-E-A-C-B-D-E-A-C-B-B-A-E-D
-// A=1, B=1, C=2, D=1, E=1, divider=0 → total=34 ✓
-
-plan('B', next());                          //  1
-plan('A', { ...next(), reverse: false });   //  2
-plan('C', { f1: next(), f2: next(), reverse: false }); //  4
-plan('D', next());                          //  5
-plan('E', { ...next(), reverse: false });   //  6
-plan('A', { ...next(), reverse: true });    //  7
-plan('C', { f1: next(), f2: next(), reverse: true });  //  9
-plan('B', next());                          // 10
-plan('D', next());                          // 11
-plan('E', { ...next(), reverse: false });   // 12
-plan('A', { ...next(), reverse: false });   // 13
-plan('C', { f1: next(), f2: next(), reverse: false }); // 15
-
-plan('divider');
-
-plan('B', next());                          // 16
-plan('C', { f1: next(), f2: next(), reverse: true });  // 18
-plan('D', next());                          // 19
-plan('E', { ...next(), reverse: false });   // 20
-plan('A', { ...next(), reverse: true });    // 21
-plan('C', { f1: next(), f2: next(), reverse: false }); // 23
-plan('B', next());                          // 24
-plan('D', next());                          // 25
-plan('E', { ...next(), reverse: false });   // 26
-plan('A', { ...next(), reverse: false });   // 27
-plan('C', { f1: next(), f2: next(), reverse: true });  // 29
-plan('B', next());                          // 30
-plan('B', next());                          // 31
-plan('A', { ...next(), reverse: true });    // 32
-plan('E', { ...next(), reverse: false });   // 33
-plan('D', next());                          // 34
-
-// ============================================================
-// BUILD THE DOM
-// ============================================================
-const hero = document.getElementById('hero');
-
-function buildHTML(p) {
-  switch (p.type) {
-    case 'A': return buildModuleA(p.file, p.idx, p.reverse);
-    case 'B': return buildModuleB(p.file, p.idx);
-    case 'C': return buildModuleC(p.f1.file, p.f2.file, p.f1.idx, p.reverse);
-    case 'D': return buildModuleD(p.file, p.idx);
-    case 'E': return buildModuleE(p.file, p.idx, p.reverse);
-    case 'divider': return `
-      <div class="divider reveal">
-        <div class="divider-inner">
-          <div class="divider-rule"></div>
-          <div class="divider-label">Portfolio</div>
-          <div class="divider-title">The Collection Continues</div>
-        </div>
-      </div>`;
-    default: return '';
+// ===== PLAY/PAUSE =====
+function togglePlay(){
+  playing=!playing;
+  const icon=playing?'❚❚':'▶';
+  document.querySelectorAll('.btn-play').forEach(b=>b.textContent=icon);
+  if(playing){
+    document.querySelectorAll('.photo-frame.A').forEach(f=>f.classList.remove('paused'));
+    resetKenBurns();
+    startProg();
+  }else{
+    document.querySelectorAll('.photo-frame.A').forEach(f=>f.classList.add('paused'));
+    stopProg();
   }
 }
 
-let htmlStr = '';
-layoutPlan.forEach(p => { htmlStr += buildHTML(p); });
+function next(){go(idx+1)}
+function prev(){go(idx-1)}
 
-hero.insertAdjacentHTML('afterend', htmlStr);
-
-// Debug: count how many photos were used
-const totalUsed = layoutPlan.reduce((sum, p) => {
-  if (p.type === 'C') return sum + 2;
-  if (p.type === 'divider') return sum;
-  return sum + 1;
-}, 0);
-console.log('Photos used in layout:', totalUsed, '/', photoFiles.length);
-
-// ============================================================
-// INTERSECTION OBSERVER — Lazy Activation
-// ============================================================
-const observerOptions = {
-  root: null,
-  rootMargin: '120px 0px 120px 0px',
-  threshold: 0.08
-};
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const el = entry.target;
-
-      // Add .is-visible to trigger the CSS animation
-      el.classList.add('is-visible');
-
-      // Swap data-src → src for lazy images inside this module
-      const imgs = el.querySelectorAll('img[data-src]');
-      imgs.forEach(img => {
-        img.src = img.dataset.src;
-        img.removeAttribute('data-src');
-        // Once the real src is set, the image loads and the reveal animation
-        // shows it fading in smoothly
-      });
-
-      // Stop observing once revealed
-      observer.unobserve(el);
-    }
-    // Note: we do NOT remove .is-visible when leaving viewport —
-    // this avoids layout thrashing. Once revealed, stays revealed.
+// ===== PROGRESS CLICK =====
+document.querySelectorAll('.progress-wrap').forEach(el=>{
+  el.addEventListener('click',e=>{
+    const r=el.getBoundingClientRect();
+    const p=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
+    prog=p;
+    document.querySelectorAll('.progress-bar').forEach(b=>b.style.width=p+'%');
   });
-}, observerOptions);
-
-// Observe all .reveal elements
-document.querySelectorAll('.reveal').forEach(el => {
-  observer.observe(el);
 });
 
-// Also observe the hero stagger children
-document.querySelectorAll('.reveal-stagger > .reveal').forEach(el => {
-  observer.observe(el);
+// ===== EVENTS =====
+['pcPlay','mPlay'].forEach(id=>$(id)?.addEventListener('click',togglePlay));
+['pcNext','mNext'].forEach(id=>$(id)?.addEventListener('click',next));
+['pcPrev','mPrev'].forEach(id=>$(id)?.addEventListener('click',prev));
+
+document.addEventListener('keydown',e=>{
+  if(e.key===' '){e.preventDefault();togglePlay()}
+  if(e.key==='ArrowRight')next();
+  if(e.key==='ArrowLeft')prev();
 });
 
-// ============================================================
-// IMAGE LOAD ERROR HANDLING
-// ============================================================
-document.addEventListener('error', function(e) {
-  if (e.target.tagName === 'IMG') {
-    e.target.style.background = '#e8e6e2';
-    e.target.style.minHeight = '300px';
-    console.warn('Image failed to load:', e.target.dataset.src || e.target.src);
+// ===== SHEET (mobile) =====
+const sheet=$('tracklistSheet'),sBtn=$('sheetToggle');
+sBtn?.addEventListener('click',()=>{
+  sheet.classList.toggle('open');
+  sBtn.textContent=sheet.classList.contains('open')?'✕ CLOSE':'☰ VIEW TRACKLIST';
+});
+document.addEventListener('click',e=>{
+  if(e.target.closest('.track')&&sheet?.classList.contains('open')){
+    sheet.classList.remove('open');
+    if(sBtn)sBtn.textContent='☰ VIEW TRACKLIST';
   }
-}, true);
+});
 
-console.log('✨ Editorial layout ready. Scroll to explore.');
-console.log('🖼️  All photos lazy-loaded via IntersectionObserver');
-console.log('📐  Layout: Asymmetric editorial — Vogue-style');
+// ===== INIT =====
+// First load: only download image 0
+const i0=$('imgA');
+i0.src=DIR+FILES[0];
+// Ensure current frame is visible
+$('frameA').classList.add('A');
+$('frameA').classList.remove('paused');
+updateUI(0);
+$('ambientBg').style.backgroundImage=`url('${DIR+FILES[0]}')`;
+prog=0;
+// Preload second image in background
+preloadNext(0);
 </script>
 </body>
 </html>
